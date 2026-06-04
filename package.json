@@ -1,0 +1,16 @@
+{
+  "name": "exhibit-inspection",
+  "version": "1.0.0",
+  "description": "全栈展品巡检 Web 项目",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --parallel dev",
+    "dev:server": "pnpm --filter server dev",
+    "dev:client": "pnpm --filter client dev",
+    "build": "pnpm -r build",
+    "start": "pnpm --filter server start"
+  },
+  "keywords": ["exhibit", "inspection", "museum"],
+  "author": "",
+  "license": "MIT"
+}
