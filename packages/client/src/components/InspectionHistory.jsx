@@ -5,6 +5,7 @@ import InspectionDetail from './InspectionDetail.jsx';
 function InspectionHistory({ zones, selectedZone, onZoneChange }) {
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('all');
@@ -29,17 +30,22 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
     const currentRequestId = ++requestIdRef.current;
 
     setLoading(true);
+    setError(null);
     try {
       const status = selectedStatus === 'all' ? null : selectedStatus;
       const data = await getInspections(selectedZone, status, controller.signal);
       if (controller.signal.aborted) return;
       if (currentRequestId !== requestIdRef.current) return;
       setInspections(data);
+      setError(null);
     } catch (error) {
       if (error.name === 'AbortError') {
         return;
       }
+      if (currentRequestId !== requestIdRef.current) return;
       console.error('加载巡检历史失败:', error);
+      setInspections([]);
+      setError(error.message || '加载失败');
     } finally {
       if (!controller.signal.aborted && currentRequestId === requestIdRef.current) {
         setLoading(false);
@@ -100,6 +106,15 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
 
       {loading ? (
         <div className="loading">加载中...</div>
+      ) : error ? (
+        <div className="error-state">
+          <div className="icon">❌</div>
+          <h3>加载失败</h3>
+          <p>{error}</p>
+          <button className="btn-retry" onClick={loadInspections}>
+            🔄 重试
+          </button>
+        </div>
       ) : inspections.length === 0 ? (
         <div className="empty-state">
           <div className="icon">📭</div>
