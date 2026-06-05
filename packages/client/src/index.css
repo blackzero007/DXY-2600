@@ -799,6 +799,141 @@ body {
   padding: 12px 30px;
 }
 
+.abnormal-section {
+  background: linear-gradient(135deg, #fff5f5 0%, #ffe0e0 100%);
+  border: 2px solid #fecaca;
+  border-radius: 12px;
+  padding: 25px;
+}
+
+.abnormal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.abnormal-header h3 {
+  font-size: 1.2rem;
+  color: #991b1b;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.abnormal-count {
+  background: #ef4444;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.abnormal-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: #059669;
+}
+
+.abnormal-empty-icon {
+  font-size: 3rem;
+  margin-bottom: 10px;
+}
+
+.abnormal-empty p {
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.abnormal-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.abnormal-card {
+  background: white;
+  border-radius: 10px;
+  padding: 18px;
+  border-left: 4px solid #ef4444;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.1);
+  transition: all 0.3s ease;
+}
+
+.abnormal-card:hover {
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.15);
+}
+
+.abnormal-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.abnormal-exhibit-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.abnormal-exhibit-name {
+  font-size: 1.1rem;
+  color: #1f2937;
+  font-weight: 600;
+  margin: 0;
+}
+
+.abnormal-zone-tag {
+  display: inline-block;
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.abnormal-card-body {
+  color: #4b5563;
+}
+
+.abnormal-remarks {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.abnormal-label {
+  font-weight: 600;
+  color: #991b1b;
+}
+
+.abnormal-text {
+  color: #374151;
+}
+
+.abnormal-meta {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.abnormal-time,
+.abnormal-inspector {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.abnormal-icon {
+  font-size: 0.9rem;
+}
+
 .error-state {
   text-align: center;
   padding: 60px 20px;
@@ -840,5 +975,25 @@ body {
 
   .zone-grid {
     grid-template-columns: 1fr;
+  }
+
+  .abnormal-section {
+    padding: 18px;
+  }
+
+  .abnormal-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .abnormal-card-header {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .abnormal-meta {
+    flex-direction: column;
+    gap: 8px;
   }
 }

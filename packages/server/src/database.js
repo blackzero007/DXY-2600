@@ -188,6 +188,33 @@ function createInspection(exhibitId, inspector, status, remarks) {
   return Promise.resolve(id);
 }
 
+function getAbnormalExhibits() {
+  const abnormalExhibits = exhibits
+    .filter(exhibit => {
+      const lastInspection = inspections
+        .filter(i => i.exhibit_id === exhibit.id)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+      return lastInspection && lastInspection.status === 'abnormal';
+    })
+    .map(exhibit => {
+      const lastInspection = inspections
+        .filter(i => i.exhibit_id === exhibit.id)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+      return {
+        id: exhibit.id,
+        name: exhibit.name,
+        zone: exhibit.zone,
+        description: exhibit.description,
+        abnormal_remarks: lastInspection.remarks,
+        abnormal_time: lastInspection.created_at,
+        inspector: lastInspection.inspector
+      };
+    })
+    .sort((a, b) => new Date(b.abnormal_time) - new Date(a.abnormal_time));
+
+  return Promise.resolve(abnormalExhibits);
+}
+
 function getZones() {
   const zones = [...new Set(exhibits.map(e => e.zone))].sort();
   return Promise.resolve(zones);
@@ -246,5 +273,6 @@ module.exports = {
   getAllInspections,
   createInspection,
   getZones,
-  getTodayInspectionStats
+  getTodayInspectionStats,
+  getAbnormalExhibits
 };

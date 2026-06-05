@@ -40,6 +40,7 @@ const PORT = process.env.PORT || 3001;
       console.log(`📚 API 文档:`);
     console.log(`   GET  /api/exhibits           - 获取展品列表`);
     console.log(`   GET  /api/exhibits/zones     - 获取所有展区`);
+    console.log(`   GET  /api/exhibits/abnormal/list - 获取异常展品列表`);
     console.log(`   GET  /api/exhibits/:id       - 获取展品详情`);
     console.log(`   POST /api/inspections        - 创建巡检记录`);
     console.log(`   GET  /api/inspections        - 获取所有巡检记录`);

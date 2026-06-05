@@ -1,21 +1,26 @@
 import React, { useState, useEffect } from 'react';
-import { getTodayInspectionStats } from '../api/index.js';
+import { getTodayInspectionStats, getAbnormalExhibits } from '../api/index.js';
 
 function Dashboard() {
   const [stats, setStats] = useState(null);
+  const [abnormalExhibits, setAbnormalExhibits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    loadStats();
+    loadData();
   }, []);
 
-  async function loadStats() {
+  async function loadData() {
     try {
       setLoading(true);
       setError(null);
-      const data = await getTodayInspectionStats();
-      setStats(data);
+      const [statsData, abnormalData] = await Promise.all([
+        getTodayInspectionStats(),
+        getAbnormalExhibits()
+      ]);
+      setStats(statsData);
+      setAbnormalExhibits(abnormalData);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -37,6 +42,11 @@ function Dashboard() {
     day: 'numeric',
     weekday: 'long'
   });
+
+  function formatDate(dateStr) {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleString('zh-CN');
+  }
 
   return (
     <div className="dashboard">
@@ -126,8 +136,51 @@ function Dashboard() {
         </div>
       </div>
 
+      <div className="abnormal-section">
+        <div className="abnormal-header">
+          <h3>⚠️ 异常展品专栏</h3>
+          <span className="abnormal-count">{abnormalExhibits.length} 件异常</span>
+        </div>
+        {abnormalExhibits.length === 0 ? (
+          <div className="abnormal-empty">
+            <div className="abnormal-empty-icon">✅</div>
+            <p>暂无异常展品，所有展品状态良好</p>
+          </div>
+        ) : (
+          <div className="abnormal-list">
+            {abnormalExhibits.map(exhibit => (
+              <div key={exhibit.id} className="abnormal-card">
+                <div className="abnormal-card-header">
+                  <div className="abnormal-exhibit-info">
+                    <h4 className="abnormal-exhibit-name">{exhibit.name}</h4>
+                    <span className="abnormal-zone-tag">{exhibit.zone}</span>
+                  </div>
+                  <span className="status-badge abnormal">异常</span>
+                </div>
+                <div className="abnormal-card-body">
+                  <div className="abnormal-remarks">
+                    <span className="abnormal-label">异常备注：</span>
+                    <span className="abnormal-text">{exhibit.abnormal_remarks || '无'}</span>
+                  </div>
+                  <div className="abnormal-meta">
+                    <span className="abnormal-time">
+                      <span className="abnormal-icon">🕐</span>
+                      {formatDate(exhibit.abnormal_time)}
+                    </span>
+                    <span className="abnormal-inspector">
+                      <span className="abnormal-icon">👤</span>
+                      {exhibit.inspector}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       <div className="refresh-section">
-        <button className="btn btn-primary refresh-btn" onClick={loadStats}>
+        <button className="btn btn-primary refresh-btn" onClick={loadData}>
           🔄 刷新数据
         </button>
       </div>
