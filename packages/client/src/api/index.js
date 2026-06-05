@@ -9,6 +9,10 @@ async function request(url, options = {}) {
     ...options
   });
 
+  if (options.signal && options.signal.aborted) {
+    throw new DOMException('Aborted', 'AbortError');
+  }
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: '请求失败' }));
     throw new Error(error.error || `HTTP error! status: ${response.status}`);
@@ -30,7 +34,7 @@ export function getZones() {
   return request('/exhibits/zones');
 }
 
-export function getInspections(zone = null, status = null) {
+export function getInspections(zone = null, status = null, signal = null) {
   const params = [];
   if (zone) {
     params.push(`zone=${encodeURIComponent(zone)}`);
@@ -39,7 +43,8 @@ export function getInspections(zone = null, status = null) {
     params.push(`status=${encodeURIComponent(status)}`);
   }
   const url = params.length > 0 ? `/inspections?${params.join('&')}` : '/inspections';
-  return request(url);
+  const options = signal ? { signal } : {};
+  return request(url, options);
 }
 
 export function getExhibitInspections(exhibitId) {

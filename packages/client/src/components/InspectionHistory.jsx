@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getInspections, exportInspections } from '../api/index.js';
 import InspectionDetail from './InspectionDetail.jsx';
 
@@ -8,21 +8,42 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const abortControllerRef = useRef(null);
+  const requestIdRef = useRef(0);
 
   useEffect(() => {
     loadInspections();
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
   }, [selectedZone, selectedStatus]);
 
   async function loadInspections() {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const currentRequestId = ++requestIdRef.current;
+
     setLoading(true);
     try {
       const status = selectedStatus === 'all' ? null : selectedStatus;
-      const data = await getInspections(selectedZone, status);
+      const data = await getInspections(selectedZone, status, controller.signal);
+      if (controller.signal.aborted) return;
+      if (currentRequestId !== requestIdRef.current) return;
       setInspections(data);
     } catch (error) {
+      if (error.name === 'AbortError') {
+        return;
+      }
       console.error('加载巡检历史失败:', error);
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted && currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }
 
