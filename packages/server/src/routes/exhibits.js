@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllExhibits, getExhibitById, getExhibitInspections, getZones, getAbnormalExhibits, getZoneOverviewStats, createExhibit } = require('../database');
+const { getAllExhibits, getExhibitById, getExhibitInspections, getZones, getAbnormalExhibits, getZoneOverviewStats, createExhibit, getOverdueExhibits } = require('../database');
 
 router.get('/', async (req, res) => {
   const { zone } = req.query;
@@ -47,6 +47,17 @@ router.get('/abnormal/list', async (req, res) => {
   try {
     const abnormalExhibits = await getAbnormalExhibits();
     res.json(abnormalExhibits);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/overdue/list', async (req, res) => {
+  try {
+    const { hours, zone } = req.query;
+    const hoursNum = hours ? parseInt(hours, 10) : 24;
+    const overdueExhibits = await getOverdueExhibits(hoursNum, zone || null);
+    res.json(overdueExhibits);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

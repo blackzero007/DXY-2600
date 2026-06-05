@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getExhibits, createInspection, getExhibitInspections, getExhibitById, createExhibit, getZones } from '../api/index.js';
+import { getExhibits, createInspection, getExhibitInspections, getExhibitById, createExhibit, getZones, getOverdueExhibits } from '../api/index.js';
 import InspectionModal from './InspectionModal.jsx';
 import ExhibitDetail from './ExhibitDetail.jsx';
 import ExhibitForm from './ExhibitForm.jsx';
@@ -16,10 +16,14 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
   const [detailExhibit, setDetailExhibit] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [overdueExhibits, setOverdueExhibits] = useState([]);
+  const [overdueHours, setOverdueHours] = useState(24);
+  const [showReminder, setShowReminder] = useState(true);
 
   useEffect(() => {
     loadExhibits();
-  }, [selectedZone]);
+    loadOverdueExhibits();
+  }, [selectedZone, overdueHours]);
 
   async function loadExhibits() {
     setLoading(true);
@@ -31,6 +35,15 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
       onShowToast('加载展品失败', 'error');
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function loadOverdueExhibits() {
+    try {
+      const data = await getOverdueExhibits(overdueHours, selectedZone);
+      setOverdueExhibits(data);
+    } catch (error) {
+      console.error('加载巡检提醒失败:', error);
     }
   }
 
@@ -94,6 +107,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
       onShowToast('巡检记录提交成功');
       setShowModal(false);
       loadExhibits();
+      loadOverdueExhibits();
     } catch (error) {
       console.error('提交巡检记录失败:', error);
       onShowToast(error.message || '提交失败', 'error');
@@ -166,6 +180,91 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
           <div className="number">{stats.neverInspected}</div>
         </div>
       </div>
+
+      {showReminder && (
+        <div className="reminder-section">
+          <div className="reminder-header">
+            <div className="reminder-title">
+              <span className="reminder-icon">⏰</span>
+              <h3>巡检提醒</h3>
+              <span className="reminder-count">{overdueExhibits.length} 件待处理</span>
+            </div>
+            <div className="reminder-controls">
+              <select
+                className="hours-select"
+                value={overdueHours}
+                onChange={(e) => setOverdueHours(parseInt(e.target.value, 10))}
+              >
+                <option value="12">超过12小时</option>
+                <option value="24">超过24小时</option>
+                <option value="48">超过48小时</option>
+                <option value="72">超过72小时</option>
+              </select>
+              <button
+                className="btn btn-minimal"
+                onClick={() => setShowReminder(false)}
+                title="收起提醒"
+              >
+                收起
+              </button>
+            </div>
+          </div>
+
+          {overdueExhibits.length === 0 ? (
+            <div className="reminder-empty">
+              <span className="reminder-empty-icon">✅</span>
+              <p>所有展品均在 {overdueHours} 小时内完成了巡检</p>
+            </div>
+          ) : (
+            <div className="reminder-list">
+              {overdueExhibits.slice(0, 6).map(exhibit => (
+                <div
+                  key={exhibit.id}
+                  className="reminder-item"
+                  onClick={() => handleViewDetail(exhibit)}
+                >
+                  <div className="reminder-item-info">
+                    <span className="reminder-zone">{exhibit.zone}</span>
+                    <h4 className="reminder-name">{exhibit.name}</h4>
+                    <p className="reminder-desc">{exhibit.description}</p>
+                  </div>
+                  <div className="reminder-item-status">
+                    {exhibit.is_never_inspected ? (
+                      <span className="reminder-badge never">从未巡检</span>
+                    ) : (
+                      <>
+                        <span className={`reminder-badge ${exhibit.last_status}`}>
+                          {exhibit.last_status === 'normal' ? '上次正常' : '上次异常'}
+                        </span>
+                        <span className="reminder-time">
+                          已逾 {exhibit.hours_since_last} 小时
+                        </span>
+                      </>
+                    )}
+                    <button
+                      className="btn btn-primary btn-sm"
+                      onClick={(e) => { e.stopPropagation(); handleInspect(exhibit); }}
+                    >
+                      立即巡检
+                    </button>
+                  </div>
+                </div>
+              ))}
+              {overdueExhibits.length > 6 && (
+                <div className="reminder-more">
+                  还有 {overdueExhibits.length - 6} 件展品需要巡检，请在下方列表中查看
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {!showReminder && (
+        <button className="btn btn-reminder-expand" onClick={() => setShowReminder(true)}>
+          <span>⏰</span> 展开巡检提醒 ({overdueExhibits.length})
+        </button>
+      )}
 
       {loading ? (
         <div className="loading">加载中...</div>

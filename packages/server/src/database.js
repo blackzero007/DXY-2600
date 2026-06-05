@@ -368,6 +368,57 @@ function getZoneOverviewStats() {
   });
 }
 
+function getOverdueExhibits(hours = 24, zone = null) {
+  const now = new Date();
+  const overdueTime = new Date(now.getTime() - hours * 60 * 60 * 1000);
+
+  const overdueExhibits = exhibits
+    .filter(exhibit => {
+      if (zone && exhibit.zone !== zone) {
+        return false;
+      }
+      const lastInspection = inspections
+        .filter(i => i.exhibit_id === exhibit.id)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+
+      if (!lastInspection) {
+        return true;
+      }
+      return new Date(lastInspection.created_at) < overdueTime;
+    })
+    .map(exhibit => {
+      const lastInspection = inspections
+        .filter(i => i.exhibit_id === exhibit.id)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+
+      let hoursSinceLast = null;
+      if (lastInspection) {
+        const diffMs = now - new Date(lastInspection.created_at);
+        hoursSinceLast = Math.floor(diffMs / (1000 * 60 * 60));
+      }
+
+      return {
+        id: exhibit.id,
+        name: exhibit.name,
+        zone: exhibit.zone,
+        description: exhibit.description,
+        last_status: lastInspection ? lastInspection.status : null,
+        last_inspected: lastInspection ? lastInspection.created_at : null,
+        last_inspector: lastInspection ? lastInspection.inspector : null,
+        hours_since_last: hoursSinceLast,
+        is_never_inspected: !lastInspection
+      };
+    })
+    .sort((a, b) => {
+      if (a.is_never_inspected && !b.is_never_inspected) return -1;
+      if (!a.is_never_inspected && b.is_never_inspected) return 1;
+      if (a.is_never_inspected && b.is_never_inspected) return 0;
+      return b.hours_since_last - a.hours_since_last;
+    });
+
+  return Promise.resolve(overdueExhibits);
+}
+
 module.exports = {
   initDatabase,
   getAllExhibits,
@@ -380,5 +431,6 @@ module.exports = {
   getTodayInspectionStats,
   getAbnormalExhibits,
   getInspectorWorkloadStats,
-  getZoneOverviewStats
+  getZoneOverviewStats,
+  getOverdueExhibits
 };

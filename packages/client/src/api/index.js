@@ -62,6 +62,14 @@ export function getZoneOverviewStats() {
   return request('/exhibits/stats/zones');
 }
 
+export function getOverdueExhibits(hours = 24, zone = null) {
+  let url = `/exhibits/overdue/list?hours=${hours}`;
+  if (zone) {
+    url += `&zone=${encodeURIComponent(zone)}`;
+  }
+  return request(url);
+}
+
 export function createExhibit(data) {
   return request('/exhibits', {
     method: 'POST',
