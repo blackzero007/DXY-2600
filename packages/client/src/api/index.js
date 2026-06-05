@@ -57,3 +57,7 @@ export function getInspectorWorkloadStats() {
 export function getAbnormalExhibits() {
   return request('/exhibits/abnormal/list');
 }
+
+export function getZoneOverviewStats() {
+  return request('/exhibits/stats/zones');
+}

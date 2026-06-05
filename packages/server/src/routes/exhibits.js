@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { getAllExhibits, getExhibitById, getExhibitInspections, getZones, getAbnormalExhibits } = require('../database');
+const { getAllExhibits, getExhibitById, getExhibitInspections, getZones, getAbnormalExhibits, getZoneOverviewStats } = require('../database');
 
 router.get('/', async (req, res) => {
   const { zone } = req.query;
@@ -16,6 +16,15 @@ router.get('/zones', async (req, res) => {
   try {
     const zones = await getZones();
     res.json(zones);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/stats/zones', async (req, res) => {
+  try {
+    const stats = await getZoneOverviewStats();
+    res.json(stats);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -3,6 +3,7 @@ import ExhibitList from './components/ExhibitList.jsx';
 import InspectionHistory from './components/InspectionHistory.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import InspectorWorkload from './components/InspectorWorkload.jsx';
+import ZoneOverview from './components/ZoneOverview.jsx';
 import { getZones } from './api/index.js';
 
 function App() {
@@ -50,6 +51,12 @@ function App() {
           📊 今日巡检
         </button>
         <button
+          className={`nav-tab ${activeTab === 'zones' ? 'active' : ''}`}
+          onClick={() => setActiveTab('zones')}
+        >
+          🗺️ 展区概览
+        </button>
+        <button
           className={`nav-tab ${activeTab === 'exhibits' ? 'active' : ''}`}
           onClick={() => setActiveTab('exhibits')}
         >
@@ -72,6 +79,8 @@ function App() {
       <main className="content">
         {activeTab === 'dashboard' ? (
           <Dashboard />
+        ) : activeTab === 'zones' ? (
+          <ZoneOverview />
         ) : activeTab === 'exhibits' ? (
           <ExhibitList
             zones={zones}

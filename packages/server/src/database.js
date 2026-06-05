@@ -297,6 +297,58 @@ function getInspectorWorkloadStats() {
   return Promise.resolve(result);
 }
 
+function getZoneOverviewStats() {
+  const zones = [...new Set(exhibits.map(e => e.zone))].sort();
+  const zoneStats = [];
+
+  zones.forEach(zone => {
+    const zoneExhibits = exhibits.filter(e => e.zone === zone);
+    const totalCount = zoneExhibits.length;
+
+    let normalCount = 0;
+    let abnormalCount = 0;
+    let pendingCount = 0;
+
+    zoneExhibits.forEach(exhibit => {
+      const lastInspection = inspections
+        .filter(i => i.exhibit_id === exhibit.id)
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+
+      if (!lastInspection) {
+        pendingCount++;
+      } else if (lastInspection.status === 'normal') {
+        normalCount++;
+      } else if (lastInspection.status === 'abnormal') {
+        abnormalCount++;
+      }
+    });
+
+    zoneStats.push({
+      zone,
+      totalCount,
+      normalCount,
+      abnormalCount,
+      pendingCount,
+      normalRate: totalCount > 0 ? Math.round((normalCount / totalCount) * 100) : 0
+    });
+  });
+
+  const overallStats = {
+    totalCount: exhibits.length,
+    normalCount: zoneStats.reduce((sum, z) => sum + z.normalCount, 0),
+    abnormalCount: zoneStats.reduce((sum, z) => sum + z.abnormalCount, 0),
+    pendingCount: zoneStats.reduce((sum, z) => sum + z.pendingCount, 0)
+  };
+  overallStats.normalRate = overallStats.totalCount > 0
+    ? Math.round((overallStats.normalCount / overallStats.totalCount) * 100)
+    : 0;
+
+  return Promise.resolve({
+    overall: overallStats,
+    zones: zoneStats
+  });
+}
+
 module.exports = {
   initDatabase,
   getAllExhibits,
@@ -307,5 +359,6 @@ module.exports = {
   getZones,
   getTodayInspectionStats,
   getAbnormalExhibits,
-  getInspectorWorkloadStats
+  getInspectorWorkloadStats,
+  getZoneOverviewStats
 };
