@@ -32,6 +32,10 @@ function App() {
     }
   }
 
+  function refreshZones() {
+    loadZones();
+  }
+
   function showToast(message, type = 'success') {
     setToast({ message, type });
   }
@@ -87,6 +91,7 @@ function App() {
             selectedZone={selectedZone}
             onZoneChange={setSelectedZone}
             onShowToast={showToast}
+            onRefreshZones={refreshZones}
           />
         ) : activeTab === 'history' ? (
           <InspectionHistory

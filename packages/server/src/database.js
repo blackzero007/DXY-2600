@@ -163,6 +163,25 @@ function getAllInspections(zone = null) {
   return Promise.resolve(result);
 }
 
+function createExhibit(name, zone, description) {
+  const id = nextExhibitId++;
+  const now = new Date().toISOString();
+  
+  const exhibit = {
+    id,
+    name,
+    zone,
+    description,
+    status: 'normal',
+    created_at: now,
+    updated_at: now
+  };
+  
+  exhibits.push(exhibit);
+  saveData();
+  return Promise.resolve(exhibit);
+}
+
 function createInspection(exhibitId, inspector, status, remarks) {
   const id = nextInspectionId++;
   const now = new Date().toISOString();
@@ -355,6 +374,7 @@ module.exports = {
   getExhibitById,
   getExhibitInspections,
   getAllInspections,
+  createExhibit,
   createInspection,
   getZones,
   getTodayInspectionStats,

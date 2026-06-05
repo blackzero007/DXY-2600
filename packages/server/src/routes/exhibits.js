@@ -1,12 +1,25 @@
 const express = require('express');
 const router = express.Router();
-const { getAllExhibits, getExhibitById, getExhibitInspections, getZones, getAbnormalExhibits, getZoneOverviewStats } = require('../database');
+const { getAllExhibits, getExhibitById, getExhibitInspections, getZones, getAbnormalExhibits, getZoneOverviewStats, createExhibit } = require('../database');
 
 router.get('/', async (req, res) => {
   const { zone } = req.query;
   try {
     const exhibits = await getAllExhibits(zone);
     res.json(exhibits);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/', async (req, res) => {
+  const { name, zone, description } = req.body;
+  try {
+    if (!name || !zone) {
+      return res.status(400).json({ error: '展品名称和所属展区为必填项' });
+    }
+    const exhibit = await createExhibit(name, zone, description || '');
+    res.status(201).json(exhibit);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

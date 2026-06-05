@@ -61,3 +61,10 @@ export function getAbnormalExhibits() {
 export function getZoneOverviewStats() {
   return request('/exhibits/stats/zones');
 }
+
+export function createExhibit(data) {
+  return request('/exhibits', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}

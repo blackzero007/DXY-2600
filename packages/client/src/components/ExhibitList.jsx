@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { getExhibits, createInspection, getExhibitInspections, getExhibitById } from '../api/index.js';
+import { getExhibits, createInspection, getExhibitInspections, getExhibitById, createExhibit, getZones } from '../api/index.js';
 import InspectionModal from './InspectionModal.jsx';
 import ExhibitDetail from './ExhibitDetail.jsx';
+import ExhibitForm from './ExhibitForm.jsx';
 
-function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
+function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefreshZones }) {
   const [exhibits, setExhibits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedExhibit, setSelectedExhibit] = useState(null);
@@ -14,6 +15,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailExhibit, setDetailExhibit] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
 
   useEffect(() => {
     loadExhibits();
@@ -98,6 +100,21 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
     }
   }
 
+  async function handleAddExhibit(data) {
+    try {
+      await createExhibit(data);
+      onShowToast('展品添加成功');
+      setShowAddForm(false);
+      loadExhibits();
+      if (onRefreshZones) {
+        onRefreshZones();
+      }
+    } catch (error) {
+      console.error('添加展品失败:', error);
+      onShowToast(error.message || '添加失败', 'error');
+    }
+  }
+
   function formatDate(dateStr) {
     if (!dateStr) return '未巡检';
     return new Date(dateStr).toLocaleString('zh-CN');
@@ -124,6 +141,11 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
             <option key={zone} value={zone}>{zone}</option>
           ))}
         </select>
+        <div style={{ marginLeft: 'auto' }}>
+          <button className="btn btn-primary" onClick={() => setShowAddForm(true)}>
+            ➕ 新增展品
+          </button>
+        </div>
       </div>
 
       <div className="stats">
@@ -260,6 +282,14 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
             <div className="loading">加载中...</div>
           </div>
         </div>
+      )}
+
+      {showAddForm && (
+        <ExhibitForm
+          zones={zones}
+          onClose={() => setShowAddForm(false)}
+          onSubmit={handleAddExhibit}
+        />
       )}
     </div>
   );
