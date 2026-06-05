@@ -150,7 +150,7 @@ function getExhibitInspections(exhibitId) {
   return Promise.resolve(result);
 }
 
-function getAllInspections(zone = null) {
+function getAllInspections(zone = null, status = null) {
   let result = inspections
     .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
     .map(i => {
@@ -164,6 +164,10 @@ function getAllInspections(zone = null) {
   
   if (zone) {
     result = result.filter(i => i.exhibit_zone === zone);
+  }
+
+  if (status) {
+    result = result.filter(i => i.status === status);
   }
   
   return Promise.resolve(result);

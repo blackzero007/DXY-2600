@@ -7,15 +7,17 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [selectedStatus, setSelectedStatus] = useState('all');
 
   useEffect(() => {
     loadInspections();
-  }, [selectedZone]);
+  }, [selectedZone, selectedStatus]);
 
   async function loadInspections() {
     setLoading(true);
     try {
-      const data = await getInspections(selectedZone);
+      const status = selectedStatus === 'all' ? null : selectedStatus;
+      const data = await getInspections(selectedZone, status);
       setInspections(data);
     } catch (error) {
       console.error('加载巡检历史失败:', error);
@@ -32,7 +34,8 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
     if (exporting) return;
     setExporting(true);
     try {
-      await exportInspections(selectedZone);
+      const status = selectedStatus === 'all' ? null : selectedStatus;
+      await exportInspections(selectedZone, status);
     } catch (error) {
       console.error('导出失败:', error);
       alert('导出失败，请稍后重试');
@@ -54,6 +57,16 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
           {zones.map(zone => (
             <option key={zone} value={zone}>{zone}</option>
           ))}
+        </select>
+        <label htmlFor="status-filter-history">按状态筛选：</label>
+        <select
+          id="status-filter-history"
+          value={selectedStatus}
+          onChange={(e) => setSelectedStatus(e.target.value)}
+        >
+          <option value="all">全部状态</option>
+          <option value="normal">✅ 正常</option>
+          <option value="abnormal">⚠️ 异常</option>
         </select>
         <button
           className="btn-export"

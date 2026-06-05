@@ -30,8 +30,15 @@ export function getZones() {
   return request('/exhibits/zones');
 }
 
-export function getInspections(zone = null) {
-  const url = zone ? `/inspections?zone=${encodeURIComponent(zone)}` : '/inspections';
+export function getInspections(zone = null, status = null) {
+  const params = [];
+  if (zone) {
+    params.push(`zone=${encodeURIComponent(zone)}`);
+  }
+  if (status) {
+    params.push(`status=${encodeURIComponent(status)}`);
+  }
+  const url = params.length > 0 ? `/inspections?${params.join('&')}` : '/inspections';
   return request(url);
 }
 
@@ -77,10 +84,17 @@ export function createExhibit(data) {
   });
 }
 
-export function exportInspections(zone = null) {
-  let url = `${API_BASE}/inspections/export`;
+export function exportInspections(zone = null, status = null) {
+  const params = [];
   if (zone) {
-    url += `?zone=${encodeURIComponent(zone)}`;
+    params.push(`zone=${encodeURIComponent(zone)}`);
+  }
+  if (status) {
+    params.push(`status=${encodeURIComponent(status)}`);
+  }
+  let url = `${API_BASE}/inspections/export`;
+  if (params.length > 0) {
+    url += `?${params.join('&')}`;
   }
   return fetch(url)
     .then(response => {
