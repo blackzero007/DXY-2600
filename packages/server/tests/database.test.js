@@ -95,6 +95,90 @@ async function runTests() {
     assert.ok(exhibit.last_inspected, '最近巡检时间不应为空');
   });
 
+  await runTest('getOverdueExhibits 返回超过指定小时数未巡检的展品', async () => {
+    const { initDatabase, getOverdueExhibits } = require('../src/database');
+    await initDatabase();
+    const overdue24h = await getOverdueExhibits(24);
+    assert.ok(Array.isArray(overdue24h), '应返回数组');
+    assert.ok(overdue24h.length > 0, '24小时未巡检的展品不应为空（初始数据包含72小时内随机巡检）');
+
+    const overdue72h = await getOverdueExhibits(72);
+    assert.ok(Array.isArray(overdue72h), '应返回数组');
+    assert.ok(overdue72h.length <= overdue24h.length, '72小时未巡检的展品数量应小于等于24小时的');
+  });
+
+  await runTest('getOverdueExhibits 返回数据包含必要字段', async () => {
+    const { initDatabase, getOverdueExhibits } = require('../src/database');
+    await initDatabase();
+    const overdue = await getOverdueExhibits(24);
+    if (overdue.length > 0) {
+      const item = overdue[0];
+      assert.ok('id' in item, '应包含 id 字段');
+      assert.ok('name' in item, '应包含 name 字段');
+      assert.ok('zone' in item, '应包含 zone 字段');
+      assert.ok('hours_since_last' in item, '应包含 hours_since_last 字段');
+      assert.ok('is_never_inspected' in item, '应包含 is_never_inspected 字段');
+    }
+  });
+
+  await runTest('getOverdueExhibits 支持按展区筛选', async () => {
+    const { initDatabase, getOverdueExhibits, getZones } = require('../src/database');
+    await initDatabase();
+    const zones = await getZones();
+    assert.ok(zones.length > 0, '至少有一个展区');
+
+    const allOverdue = await getOverdueExhibits(24);
+    const zoneOverdue = await getOverdueExhibits(24, zones[0]);
+    assert.ok(Array.isArray(zoneOverdue), '按展区筛选应返回数组');
+    assert.ok(zoneOverdue.length <= allOverdue.length, '单个展区的超时展品数量不应超过全部展区');
+    zoneOverdue.forEach(item => {
+      assert.strictEqual(item.zone, zones[0], '筛选结果应属于指定展区');
+    });
+  });
+
+  await runTest('【BUG修复验证】createExhibit 后 getOverdueExhibits 应包含新增展品', async () => {
+    const { initDatabase, createExhibit, getOverdueExhibits } = require('../src/database');
+    await initDatabase();
+
+    const beforeCount = (await getOverdueExhibits(1)).length;
+
+    const newExhibit = await createExhibit('新增测试展品', '古代文明区', '测试描述');
+    assert.ok(newExhibit, '展品应创建成功');
+
+    const afterOverdue = await getOverdueExhibits(1);
+    const afterCount = afterOverdue.length;
+
+    assert.strictEqual(afterCount, beforeCount + 1, '新增展品后超时未巡检列表数量应增加1');
+
+    const found = afterOverdue.find(e => e.id === newExhibit.id);
+    assert.ok(found, '新增的展品应出现在超时未巡检列表中');
+    assert.strictEqual(found.is_never_inspected, true, '新增展品从未巡检，is_never_inspected 应为 true');
+    assert.strictEqual(found.name, '新增测试展品', '展品名称应正确');
+    assert.strictEqual(found.zone, '古代文明区', '展区应正确');
+  });
+
+  await runTest('从未巡检的展品在 getOverdueExhibits 中优先排序', async () => {
+    const { initDatabase, createExhibit, getOverdueExhibits } = require('../src/database');
+    await initDatabase();
+
+    await createExhibit('从未巡检展品A', '测试区', '测试');
+    await createExhibit('从未巡检展品B', '测试区', '测试');
+
+    const overdue = await getOverdueExhibits(1);
+    let foundInspected = false;
+
+    for (let i = 0; i < overdue.length; i++) {
+      if (!overdue[i].is_never_inspected) {
+        foundInspected = true;
+      } else if (foundInspected) {
+        assert.fail('从未巡检的展品应排在已巡检但超时的展品前面，不应出现在已巡检展品之后');
+      }
+    }
+
+    const neverInspectedCount = overdue.filter(e => e.is_never_inspected).length;
+    assert.ok(neverInspectedCount >= 2, '至少应有 2 个从未巡检的展品');
+  });
+
   console.log(`\n📊 测试结果: ${passed}/${testCount} 通过`);
   
   if (failed > 0) {

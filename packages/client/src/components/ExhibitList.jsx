@@ -120,6 +120,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
       onShowToast('展品添加成功');
       setShowAddForm(false);
       loadExhibits();
+      loadOverdueExhibits();
       if (onRefreshZones) {
         onRefreshZones();
       }
