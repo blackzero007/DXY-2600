@@ -34,6 +34,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
 
   async function handleViewDetail(exhibit) {
     setSelectedExhibit(exhibit);
+    setDetailExhibit(null);
     setDetailLoading(true);
     setShowDetailModal(true);
     try {
@@ -42,19 +43,26 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
     } catch (error) {
       console.error('加载展品详情失败:', error);
       onShowToast('加载展品详情失败', 'error');
+      setShowDetailModal(false);
     } finally {
       setDetailLoading(false);
     }
   }
 
-  function handleInspect(exhibit) {
+  function handleCloseDetail() {
     setShowDetailModal(false);
+    setDetailExhibit(null);
+    setDetailLoading(false);
+  }
+
+  function handleInspect(exhibit) {
+    handleCloseDetail();
     setSelectedExhibit(exhibit);
     setShowModal(true);
   }
 
   function handleViewHistoryFromDetail(exhibit) {
-    setShowDetailModal(false);
+    handleCloseDetail();
     handleViewHistory(exhibit);
   }
 
@@ -240,14 +248,14 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
       {showDetailModal && detailExhibit && !detailLoading && (
         <ExhibitDetail
           exhibit={detailExhibit}
-          onClose={() => setShowDetailModal(false)}
+          onClose={handleCloseDetail}
           onInspect={handleInspect}
           onViewHistory={handleViewHistoryFromDetail}
         />
       )}
 
       {showDetailModal && detailLoading && (
-        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+        <div className="modal-overlay" onClick={handleCloseDetail}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="loading">加载中...</div>
           </div>
