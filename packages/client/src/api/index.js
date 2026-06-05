@@ -45,3 +45,7 @@ export function createInspection(data) {
     body: JSON.stringify(data)
   });
 }
+
+export function getTodayInspectionStats() {
+  return request('/inspections/stats/today');
+}

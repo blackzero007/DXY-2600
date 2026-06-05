@@ -193,6 +193,51 @@ function getZones() {
   return Promise.resolve(zones);
 }
 
+function isToday(dateString) {
+  const date = new Date(dateString);
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
+}
+
+function getTodayInspectionStats() {
+  const todayInspections = inspections.filter(i => isToday(i.created_at));
+  const todayInspectedExhibitIds = [...new Set(todayInspections.map(i => i.exhibit_id))];
+  const inspectedCount = todayInspectedExhibitIds.length;
+  const abnormalCount = todayInspections.filter(i => i.status === 'abnormal').length;
+  const uninspectedCount = exhibits.length - inspectedCount;
+
+  const zoneStats = {};
+  const zones = [...new Set(exhibits.map(e => e.zone))];
+
+  zones.forEach(zone => {
+    const zoneExhibits = exhibits.filter(e => e.zone === zone);
+    const zoneInspectedIds = todayInspectedExhibitIds.filter(id =>
+      zoneExhibits.some(e => e.id === id)
+    );
+    zoneStats[zone] = {
+      total: zoneExhibits.length,
+      inspected: zoneInspectedIds.length,
+      uninspected: zoneExhibits.length - zoneInspectedIds.length,
+      completionRate: zoneExhibits.length > 0
+        ? Math.round((zoneInspectedIds.length / zoneExhibits.length) * 100)
+        : 0
+    };
+  });
+
+  return Promise.resolve({
+    totalExhibits: exhibits.length,
+    inspectedCount,
+    abnormalCount,
+    uninspectedCount,
+    completionRate: exhibits.length > 0
+      ? Math.round((inspectedCount / exhibits.length) * 100)
+      : 0,
+    zoneStats
+  });
+}
+
 module.exports = {
   initDatabase,
   getAllExhibits,
@@ -200,5 +245,6 @@ module.exports = {
   getExhibitInspections,
   getAllInspections,
   createInspection,
-  getZones
+  getZones,
+  getTodayInspectionStats
 };

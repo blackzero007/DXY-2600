@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ExhibitList from './components/ExhibitList.jsx';
 import InspectionHistory from './components/InspectionHistory.jsx';
+import Dashboard from './components/Dashboard.jsx';
 import { getZones } from './api/index.js';
 
 function App() {
@@ -42,6 +43,12 @@ function App() {
 
       <nav className="nav-tabs">
         <button
+          className={`nav-tab ${activeTab === 'dashboard' ? 'active' : ''}`}
+          onClick={() => setActiveTab('dashboard')}
+        >
+          📊 今日巡检
+        </button>
+        <button
           className={`nav-tab ${activeTab === 'exhibits' ? 'active' : ''}`}
           onClick={() => setActiveTab('exhibits')}
         >
@@ -56,7 +63,9 @@ function App() {
       </nav>
 
       <main className="content">
-        {activeTab === 'exhibits' ? (
+        {activeTab === 'dashboard' ? (
+          <Dashboard />
+        ) : activeTab === 'exhibits' ? (
           <ExhibitList
             zones={zones}
             selectedZone={selectedZone}
