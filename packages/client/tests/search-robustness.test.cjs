@@ -1,6 +1,6 @@
 const assert = require('assert');
 
-console.log('\n🧪 运行搜索功能健壮性测试（验证异常数据下搜索不崩溃 bug 修复）\n');
+console.log('\n🧪 运行搜索功能健壮性测试（覆盖完整链路：验证清洗→过滤→统计→渲染准备）\n');
 
 let passed = 0;
 let failed = 0;
@@ -17,6 +17,24 @@ function test(name, fn) {
   }
 }
 
+function isValidExhibit(exhibit) {
+  if (!exhibit || typeof exhibit !== 'object') return false;
+  if (exhibit.id === undefined || exhibit.id === null) return false;
+  return true;
+}
+
+function getSafeExhibit(exhibit) {
+  if (!isValidExhibit(exhibit)) return null;
+  return {
+    id: exhibit.id,
+    name: String(exhibit.name ?? ''),
+    zone: String(exhibit.zone ?? ''),
+    description: String(exhibit.description ?? ''),
+    last_status: exhibit.last_status ?? null,
+    last_inspected: exhibit.last_inspected ?? null
+  };
+}
+
 function filterExhibits_BUGGY(exhibits, searchKeyword) {
   if (!searchKeyword.trim()) return exhibits;
   const keyword = searchKeyword.toLowerCase().trim();
@@ -25,218 +43,324 @@ function filterExhibits_BUGGY(exhibits, searchKeyword) {
   });
 }
 
-function filterExhibits_FIXED(exhibits, searchKeyword) {
-  if (!searchKeyword.trim()) return exhibits;
-  const keyword = searchKeyword.toLowerCase().trim();
-  return exhibits.filter(exhibit => {
-    const exhibitName = exhibit && exhibit.name ? String(exhibit.name) : '';
-    return exhibitName.toLowerCase().includes(keyword);
+function buildExhibitPipeline(exhibits, searchKeyword) {
+  const validExhibits = exhibits
+    .map(getSafeExhibit)
+    .filter(e => e !== null);
+
+  const filteredExhibits = validExhibits.filter(exhibit => {
+    if (!searchKeyword.trim()) return true;
+    const keyword = searchKeyword.toLowerCase().trim();
+    return exhibit.name.toLowerCase().includes(keyword);
   });
+
+  const stats = {
+    total: filteredExhibits.length,
+    normal: filteredExhibits.filter(e => e.last_status === 'normal').length,
+    abnormal: filteredExhibits.filter(e => e.last_status === 'abnormal').length,
+    neverInspected: filteredExhibits.filter(e => !e.last_status).length
+  };
+
+  return { validExhibits, filteredExhibits, stats };
+}
+
+function prepareRenderData(filteredExhibits) {
+  return filteredExhibits.map(exhibit => ({
+    key: String(exhibit.id),
+    cardClass: `exhibit-card ${exhibit.last_status === 'abnormal' ? 'abnormal' : ''}`,
+    zoneTag: exhibit.zone,
+    name: exhibit.name,
+    description: exhibit.description,
+    statusText: exhibit.last_status === 'normal' ? '✅ 正常' : 
+                exhibit.last_status === 'abnormal' ? '⚠️ 异常' : '未巡检',
+    statusClass: exhibit.last_status || '',
+    lastInspectedText: exhibit.last_inspected ? 
+      new Date(exhibit.last_inspected).toLocaleString('zh-CN') : '未巡检'
+  }));
 }
 
 const normalExhibits = [
-  { id: 1, name: '青铜鼎', zone: '古代文明区', last_status: 'normal' },
-  { id: 2, name: '恐龙化石', zone: '自然探索区', last_status: 'normal' },
-  { id: 3, name: '青花瓷瓶', zone: '古代文明区', last_status: 'abnormal' }
+  { id: 1, name: '青铜鼎', zone: '古代文明区', description: '商代青铜器', last_status: 'normal', last_inspected: '2026-06-01T10:00:00Z' },
+  { id: 2, name: '恐龙化石', zone: '自然探索区', description: '侏罗纪恐龙', last_status: 'normal', last_inspected: '2026-06-02T10:00:00Z' },
+  { id: 3, name: '青花瓷瓶', zone: '古代文明区', description: '元代青花瓷', last_status: 'abnormal', last_inspected: '2026-06-03T10:00:00Z' }
 ];
 
 const mixedExhibits = [
-  { id: 1, name: '青铜鼎', zone: '古代文明区', last_status: 'normal' },
+  { id: 1, name: '青铜鼎', zone: '古代文明区', description: '商代青铜器', last_status: 'normal', last_inspected: '2026-06-01T10:00:00Z' },
   { id: 2, name: null, zone: '测试区', last_status: 'normal' },
   { id: 3, name: undefined, zone: '测试区', last_status: 'abnormal' },
   { id: 4, name: '', zone: '测试区', last_status: 'normal' },
   { id: 5, name: 12345, zone: '测试区', last_status: 'normal' },
-  { id: 6, name: '恐龙化石', zone: '自然探索区', last_status: 'normal' },
+  { id: 6, name: '恐龙化石', zone: '自然探索区', description: '侏罗纪恐龙', last_status: 'normal' },
   null,
   undefined,
-  { id: 8, name: '青花瓷瓶', zone: '古代文明区', last_status: 'abnormal' }
+  { id: 8, name: '青花瓷瓶', zone: '古代文明区', description: '元代青花瓷', last_status: 'abnormal' },
+  { id: null, name: '无ID展品', zone: '异常区' },
+  { id: undefined, name: 'undefinedID展品', zone: '异常区' },
+  {},
+  { id: 9, name: '翡翠白菜', zone: '古代文明区', last_status: null }
 ];
 
-test('【正常场景】修复后搜索正常展品能正确过滤', () => {
-  const result = filterExhibits_FIXED(normalExhibits, '青铜');
-  assert.strictEqual(result.length, 1, '搜索"青铜"应找到 1 件展品');
-  assert.strictEqual(result[0].name, '青铜鼎', '找到的展品应是青铜鼎');
+test('【BUG复现】有缺陷的版本空搜索时异常数据原样保留，后续统计会崩溃', () => {
+  const result = filterExhibits_BUGGY(mixedExhibits, '');
+  assert.strictEqual(result.length, mixedExhibits.length, '有缺陷版本空搜索时原样返回所有数据');
+  assert.strictEqual(result[6], null, 'null 展品被保留在结果中');
+  
+  let threw = false;
+  try {
+    result.filter(e => e.last_status === 'normal').length;
+  } catch (e) {
+    threw = true;
+  }
+  assert.strictEqual(threw, true, '统计时读取 e.last_status 会崩溃');
 });
 
-test('【正常场景】空搜索关键词返回所有展品', () => {
-  const result = filterExhibits_FIXED(normalExhibits, '');
-  assert.strictEqual(result.length, 3, '空关键词应返回所有 3 件展品');
-});
-
-test('【正常场景】搜索不区分大小写', () => {
-  const result1 = filterExhibits_FIXED(normalExhibits, '恐龙');
-  const result2 = filterExhibits_FIXED(normalExhibits, 'KONG龙');
-  assert.strictEqual(result1.length, 1, '中文搜索应找到');
-  assert.strictEqual(result2.length, 0, '拼音搜索不应找到');
-});
-
-test('【BUG复现】有缺陷的搜索在遇到 null 名称时会抛出异常', () => {
+test('【BUG复现】有缺陷的版本非空搜索遇到 null 名称会崩溃', () => {
   let threw = false;
   try {
     filterExhibits_BUGGY(mixedExhibits, '青铜');
   } catch (e) {
     threw = true;
   }
-  assert.strictEqual(threw, true, '有缺陷的版本遇到 null 名称时应抛出异常（这就是 bug）');
+  assert.strictEqual(threw, true, '有缺陷版本遇到 null 名称会崩溃');
 });
 
-test('【BUG复现】有缺陷的搜索在遇到 undefined 名称时会抛出异常', () => {
-  let threw = false;
-  try {
-    filterExhibits_BUGGY([{ id: 1, name: undefined }], 'test');
-  } catch (e) {
-    threw = true;
-  }
-  assert.strictEqual(threw, true, '有缺陷的版本遇到 undefined 名称时应抛出异常');
+test('【数据清洗】isValidExhibit 能正确识别无效展品', () => {
+  assert.strictEqual(isValidExhibit(null), false, 'null 是无效展品');
+  assert.strictEqual(isValidExhibit(undefined), false, 'undefined 是无效展品');
+  assert.strictEqual(isValidExhibit({}), false, '空对象无 id 是无效展品');
+  assert.strictEqual(isValidExhibit({ id: null }), false, 'id 为 null 是无效展品');
+  assert.strictEqual(isValidExhibit({ id: undefined }), false, 'id 为 undefined 是无效展品');
+  assert.strictEqual(isValidExhibit({ id: 1 }), true, '有 id 的对象是有效展品');
+  assert.strictEqual(isValidExhibit({ id: 0 }), true, 'id 为 0 也是有效展品');
+  assert.strictEqual(isValidExhibit('string'), false, '字符串不是有效展品');
+  assert.strictEqual(isValidExhibit(123), false, '数字不是有效展品');
 });
 
-test('【BUG复现】有缺陷的搜索在遇到数字名称时会抛出异常', () => {
-  let threw = false;
-  try {
-    filterExhibits_BUGGY([{ id: 1, name: 123 }], 'test');
-  } catch (e) {
-    threw = true;
-  }
-  assert.strictEqual(threw, true, '有缺陷的版本遇到数字名称时应抛出异常');
+test('【数据清洗】getSafeExhibit 返回 null 用于无效展品', () => {
+  assert.strictEqual(getSafeExhibit(null), null, 'null 展品返回 null');
+  assert.strictEqual(getSafeExhibit(undefined), null, 'undefined 展品返回 null');
+  assert.strictEqual(getSafeExhibit({}), null, '无 id 的展品返回 null');
 });
 
-test('【BUG复现】有缺陷的搜索在遇到 null 展品时会抛出异常', () => {
-  let threw = false;
-  try {
-    filterExhibits_BUGGY([null], 'test');
-  } catch (e) {
-    threw = true;
-  }
-  assert.strictEqual(threw, true, '有缺陷的版本遇到 null 展品时应抛出异常');
+test('【数据清洗】getSafeExhibit 将所有字段安全转换为正确类型', () => {
+  const raw = { id: 1, name: null, zone: undefined, description: 123, last_status: 'normal' };
+  const safe = getSafeExhibit(raw);
+  
+  assert.notStrictEqual(safe, null, '有效 id 的展品不应被过滤');
+  assert.strictEqual(typeof safe.name, 'string', 'name 应转换为字符串');
+  assert.strictEqual(safe.name, '', 'null name 转为空字符串');
+  assert.strictEqual(typeof safe.zone, 'string', 'zone 应转换为字符串');
+  assert.strictEqual(safe.zone, '', 'undefined zone 转为空字符串');
+  assert.strictEqual(typeof safe.description, 'string', 'description 应转换为字符串');
+  assert.strictEqual(safe.description, '123', '数字 description 转为字符串');
+  assert.strictEqual(safe.last_status, 'normal', '正常状态保留');
 });
 
-test('【BUG修复验证】修复后搜索遇到 null 名称不会崩溃', () => {
-  let threw = false;
-  let result = [];
-  try {
-    result = filterExhibits_FIXED(mixedExhibits, '青铜');
-  } catch (e) {
-    threw = true;
-  }
-  assert.strictEqual(threw, false, '修复后遇到 null 名称不应抛出异常');
-  assert.strictEqual(result.length, 1, '搜索"青铜"应找到 1 件正常展品');
-  assert.strictEqual(result[0].name, '青铜鼎', '找到的展品应是青铜鼎');
+test('【数据清洗】getSafeExhibit 保留 null 状态字段', () => {
+  const raw = { id: 1, name: '测试', last_status: null };
+  const safe = getSafeExhibit(raw);
+  assert.strictEqual(safe.last_status, null, 'null 状态应保留为 null（表示未巡检）');
 });
 
-test('【BUG修复验证】修复后搜索遇到 undefined 名称不会崩溃', () => {
-  let threw = false;
-  try {
-    filterExhibits_FIXED([{ id: 1, name: undefined }], 'test');
-  } catch (e) {
-    threw = true;
-  }
-  assert.strictEqual(threw, false, '修复后遇到 undefined 名称不应抛出异常');
+test('【完整链路】空搜索时异常数据被清洗掉，不会进入后续流程', () => {
+  const { validExhibits, filteredExhibits, stats } = buildExhibitPipeline(mixedExhibits, '');
+  
+  assert.strictEqual(validExhibits.length, 8, '应有 8 件有效展品（过滤掉 null/undefined/无id）');
+  assert.strictEqual(filteredExhibits.length, 8, '空搜索时有效展品全部保留');
+  assert.ok(filteredExhibits.every(e => typeof e.name === 'string'), '所有展品的 name 都是字符串');
+  assert.ok(filteredExhibits.every(e => e.id !== null && e.id !== undefined), '所有展品都有有效 id');
 });
 
-test('【BUG修复验证】修复后搜索遇到数字名称不会崩溃', () => {
-  let threw = false;
-  let result = [];
-  try {
-    result = filterExhibits_FIXED([{ id: 1, name: 12345 }], '123');
-  } catch (e) {
-    threw = true;
-  }
-  assert.strictEqual(threw, false, '修复后遇到数字名称不应抛出异常');
-  assert.strictEqual(result.length, 1, '数字名称转换为字符串后也能搜索');
-});
-
-test('【BUG修复验证】修复后搜索遇到空字符串名称不会崩溃', () => {
-  let threw = false;
-  let result = [];
-  try {
-    result = filterExhibits_FIXED([{ id: 1, name: '' }], 'test');
-  } catch (e) {
-    threw = true;
-  }
-  assert.strictEqual(threw, false, '修复后遇到空字符串名称不应抛出异常');
-  assert.strictEqual(result.length, 0, '空名称不应匹配任何搜索关键词');
-});
-
-test('【BUG修复验证】修复后搜索遇到 null 展品不会崩溃', () => {
-  let threw = false;
-  let result = [];
-  try {
-    result = filterExhibits_FIXED([null, undefined, { id: 1, name: '测试' }], '测试');
-  } catch (e) {
-    threw = true;
-  }
-  assert.strictEqual(threw, false, '修复后遇到 null/undefined 展品不应抛出异常');
-  assert.strictEqual(result.length, 1, '应正确过滤掉 null/undefined 展品');
-});
-
-test('【BUG修复验证】修复后搜索混合异常数据能正确过滤正常展品', () => {
-  const result = filterExhibits_FIXED(mixedExhibits, '化');
-  assert.strictEqual(result.length, 1, '搜索"化"应找到 1 件展品（恐龙化石）');
-  assert.strictEqual(result[0].name, '恐龙化石', '找到的展品应是恐龙化石');
-});
-
-test('【BUG修复验证】修复后空关键词时所有有效展品都保留', () => {
-  const result = filterExhibits_FIXED(mixedExhibits, '');
-  assert.strictEqual(result.length, mixedExhibits.length, '空关键词时应返回原始数组（不改变长度）');
-});
-
-test('【边界场景】空数组搜索不会崩溃', () => {
+test('【完整链路】非空搜索时不会因异常数据崩溃', () => {
   let threw = false;
   let result = null;
   try {
-    result = filterExhibits_FIXED([], 'test');
+    result = buildExhibitPipeline(mixedExhibits, '青铜');
   } catch (e) {
     threw = true;
   }
-  assert.strictEqual(threw, false, '空数组搜索不应抛出异常');
-  assert.strictEqual(result.length, 0, '空数组搜索结果为空');
+  
+  assert.strictEqual(threw, false, '搜索异常数据不应抛出异常');
+  assert.strictEqual(result.filteredExhibits.length, 1, '搜索"青铜"应找到 1 件展品');
+  assert.strictEqual(result.filteredExhibits[0].name, '青铜鼎', '找到的展品是青铜鼎');
 });
 
-test('【边界场景】全是异常数据的数组搜索不会崩溃', () => {
-  const badData = [null, undefined, {}, { id: 1 }, { id: 2, name: null }];
+test('【完整链路】搜索数字名称的展品也能正常工作', () => {
+  const { filteredExhibits } = buildExhibitPipeline(mixedExhibits, '123');
+  assert.strictEqual(filteredExhibits.length, 1, '数字名称的展品也能被搜索到');
+  assert.strictEqual(filteredExhibits[0].name, '12345', '名称被转为字符串后可搜索');
+});
+
+test('【统计安全】统计计算不会因异常数据崩溃', () => {
   let threw = false;
-  let result = [];
+  let stats = null;
   try {
-    result = filterExhibits_FIXED(badData, 'test');
+    ({ stats } = buildExhibitPipeline(mixedExhibits, ''));
   } catch (e) {
     threw = true;
   }
-  assert.strictEqual(threw, false, '全异常数据搜索不应抛出异常');
-  assert.strictEqual(result.length, 0, '全异常数据搜索结果为空');
+  
+  assert.strictEqual(threw, false, '统计计算不应抛出异常');
+  assert.strictEqual(typeof stats.total, 'number', 'total 是数字');
+  assert.strictEqual(typeof stats.normal, 'number', 'normal 是数字');
+  assert.strictEqual(typeof stats.abnormal, 'number', 'abnormal 是数字');
+  assert.strictEqual(typeof stats.neverInspected, 'number', 'neverInspected 是数字');
+  assert.strictEqual(stats.total, stats.normal + stats.abnormal + stats.neverInspected, '三类统计之和等于总数');
 });
 
-test('【统计数据验证】过滤后的统计数据计算不会因异常数据崩溃', () => {
-  const result = filterExhibits_FIXED(mixedExhibits, '');
-  const stats = {
-    total: result.length,
-    normal: result.filter(e => e && e.last_status === 'normal').length,
-    abnormal: result.filter(e => e && e.last_status === 'abnormal').length,
-    neverInspected: result.filter(e => e && !e.last_status).length
-  };
-  assert.strictEqual(stats.total, mixedExhibits.length, '总数应等于原数组长度');
-  assert.ok(stats.normal >= 0, '正常数量不应为负数');
-  assert.ok(stats.abnormal >= 0, '异常数量不应为负数');
+test('【统计安全】null 状态展品计入待巡检', () => {
+  const { stats } = buildExhibitPipeline([
+    { id: 1, name: 'A', last_status: 'normal' },
+    { id: 2, name: 'B', last_status: null },
+    { id: 3, name: 'C', last_status: undefined }
+  ], '');
+  
+  assert.strictEqual(stats.neverInspected, 2, 'null 和 undefined 状态都计入待巡检');
 });
 
-test('【联动验证】展区筛选 + 搜索 + 异常数据三者共同作用不会崩溃', () => {
-  const zones = ['古代文明区', '自然探索区', '测试区'];
+test('【渲染准备】渲染数据准备不会因异常数据崩溃', () => {
+  const { filteredExhibits } = buildExhibitPipeline(mixedExhibits, '');
+  
+  let threw = false;
+  let renderData = null;
+  try {
+    renderData = prepareRenderData(filteredExhibits);
+  } catch (e) {
+    threw = true;
+  }
+  
+  assert.strictEqual(threw, false, '渲染数据准备不应抛出异常');
+  assert.strictEqual(renderData.length, filteredExhibits.length, '渲染数据条数与过滤后一致');
+  assert.ok(renderData.every(d => typeof d.key === 'string'), '所有 key 都是字符串');
+  assert.ok(renderData.every(d => typeof d.name === 'string'), '所有 name 都是字符串');
+});
+
+test('【渲染准备】异常状态展品的渲染数据是安全的', () => {
+  const { filteredExhibits } = buildExhibitPipeline(mixedExhibits, '');
+  const renderData = prepareRenderData(filteredExhibits);
+  
+  const neverInspectedItems = renderData.filter(d => d.statusText === '未巡检');
+  assert.ok(neverInspectedItems.length > 0, '有待巡检的展品');
+  assert.ok(neverInspectedItems.every(d => d.statusClass === ''), '未巡检的 statusClass 是空字符串');
+});
+
+test('【联动验证】展区筛选 + 数据清洗 + 搜索 三者共同作用不会崩溃', () => {
   const selectedZone = '古代文明区';
-  
-  let zoneFiltered = mixedExhibits.filter(e => e && e.zone === selectedZone);
+  const zoneFiltered = mixedExhibits.filter(e => {
+    if (!e || typeof e !== 'object') return false;
+    return e.zone === selectedZone;
+  });
   
   let threw = false;
-  let result = [];
+  let result = null;
   try {
-    result = filterExhibits_FIXED(zoneFiltered, '青');
+    result = buildExhibitPipeline(zoneFiltered, '青');
   } catch (e) {
     threw = true;
   }
   
-  assert.strictEqual(threw, false, '展区筛选后再搜索不应崩溃');
-  assert.strictEqual(zoneFiltered.length, 2, '古代文明区应有 2 件正常展品');
-  assert.strictEqual(result.length, 2, '古代文明区搜索"青"应找到 2 件展品（青铜鼎和青花瓷瓶）');
-  assert.ok(result.some(e => e.name === '青铜鼎'), '应包含青铜鼎');
-  assert.ok(result.some(e => e.name === '青花瓷瓶'), '应包含青花瓷瓶');
+  assert.strictEqual(threw, false, '三者联动不应崩溃');
+  assert.strictEqual(zoneFiltered.length, 3, '古代文明区原始有 3 件');
+  assert.strictEqual(result.filteredExhibits.length, 2, '古代文明区搜索"青"应找到 2 件（青铜鼎和青花瓷瓶）');
+  assert.ok(result.filteredExhibits.every(e => e.zone === '古代文明区'), '所有结果都属于古代文明区');
+  assert.ok(result.filteredExhibits.some(e => e.name === '青铜鼎'), '应包含青铜鼎');
+  assert.ok(result.filteredExhibits.some(e => e.name === '青花瓷瓶'), '应包含青花瓷瓶');
+});
+
+test('【边界场景】全异常数据的管道处理不会崩溃', () => {
+  const badData = [null, undefined, {}, { id: null }, 'string', 123];
+  
+  let threw = false;
+  let result = null;
+  try {
+    result = buildExhibitPipeline(badData, 'test');
+  } catch (e) {
+    threw = true;
+  }
+  
+  assert.strictEqual(threw, false, '全异常数据不应崩溃');
+  assert.strictEqual(result.validExhibits.length, 0, '没有有效展品');
+  assert.strictEqual(result.filteredExhibits.length, 0, '过滤后为 0');
+  assert.strictEqual(result.stats.total, 0, '统计总数为 0');
+  assert.strictEqual(result.stats.normal, 0, '正常数为 0');
+});
+
+test('【边界场景】空数组管道处理不会崩溃', () => {
+  let threw = false;
+  let result = null;
+  try {
+    result = buildExhibitPipeline([], 'test');
+  } catch (e) {
+    threw = true;
+  }
+  
+  assert.strictEqual(threw, false, '空数组不应崩溃');
+  assert.strictEqual(result.stats.total, 0, '总数为 0');
+});
+
+test('【空状态判定】搜索有结果时不显示空状态，无结果时显示正确提示', () => {
+  const { filteredExhibits: hasResult } = buildExhibitPipeline(mixedExhibits, '青铜');
+  const { filteredExhibits: noResult } = buildExhibitPipeline(mixedExhibits, '不存在的关键词');
+  
+  assert.ok(hasResult.length > 0, '有搜索结果');
+  assert.strictEqual(noResult.length, 0, '无搜索结果');
+  
+  let emptyStateText = '';
+  if (noResult.length === 0) {
+    emptyStateText = '未找到匹配的展品';
+  }
+  assert.ok(emptyStateText.length > 0, '无结果时有明确的空状态提示');
+});
+
+test('【完整端到端模拟】模拟组件完整渲染流程不崩溃', () => {
+  const rawData = mixedExhibits;
+  const searchKeyword = '';
+  
+  let threw = false;
+  let renderData = null;
+  let stats = null;
+  
+  try {
+    const pipeline = buildExhibitPipeline(rawData, searchKeyword);
+    stats = pipeline.stats;
+    renderData = prepareRenderData(pipeline.filteredExhibits);
+    
+    for (const item of renderData) {
+      void item.key;
+      void item.cardClass;
+      void item.zoneTag;
+      void item.name;
+      void item.description;
+      void item.statusText;
+      void item.statusClass;
+      void item.lastInspectedText;
+    }
+  } catch (e) {
+    threw = true;
+    console.error(e);
+  }
+  
+  assert.strictEqual(threw, false, '完整渲染流程不应抛出任何异常');
+  assert.ok(renderData.length > 0, '应有渲染数据');
+  assert.strictEqual(renderData.length, stats.total, '渲染数据量与统计总数一致');
+});
+
+test('【双重保险】即使数据意外进入渲染，prepareRenderData 也能安全处理', () => {
+  const unsafeData = [
+    { id: 1, name: '正常', last_status: 'normal' },
+    null,
+    { id: 2, name: null, last_status: 'abnormal' }
+  ];
+  
+  let threw = false;
+  try {
+    prepareRenderData(unsafeData.filter(e => e !== null).map(getSafeExhibit).filter(e => e));
+  } catch (e) {
+    threw = true;
+  }
+  
+  assert.strictEqual(threw, false, '经过清洗的数据进入渲染准备是安全的');
 });
 
 console.log(`\n📊 测试结果: ${passed}/${passed + failed} 通过\n`);

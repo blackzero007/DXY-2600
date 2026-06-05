@@ -136,11 +136,32 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
     return new Date(dateStr).toLocaleString('zh-CN');
   }
 
-  const filteredExhibits = exhibits.filter(exhibit => {
+  function isValidExhibit(exhibit) {
+    if (!exhibit || typeof exhibit !== 'object') return false;
+    if (exhibit.id === undefined || exhibit.id === null) return false;
+    return true;
+  }
+
+  function getSafeExhibit(exhibit) {
+    if (!isValidExhibit(exhibit)) return null;
+    return {
+      id: exhibit.id,
+      name: String(exhibit.name ?? ''),
+      zone: String(exhibit.zone ?? ''),
+      description: String(exhibit.description ?? ''),
+      last_status: exhibit.last_status ?? null,
+      last_inspected: exhibit.last_inspected ?? null
+    };
+  }
+
+  const validExhibits = exhibits
+    .map(getSafeExhibit)
+    .filter(e => e !== null);
+
+  const filteredExhibits = validExhibits.filter(exhibit => {
     if (!searchKeyword.trim()) return true;
     const keyword = searchKeyword.toLowerCase().trim();
-    const exhibitName = exhibit && exhibit.name ? String(exhibit.name) : '';
-    return exhibitName.toLowerCase().includes(keyword);
+    return exhibit.name.toLowerCase().includes(keyword);
   });
 
   const stats = {
