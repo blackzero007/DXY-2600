@@ -6,6 +6,7 @@ const fs = require('fs');
 const { initDatabase } = require('./database');
 const exhibitsRouter = require('./routes/exhibits');
 const inspectionsRouter = require('./routes/inspections');
+const logsRouter = require('./routes/logs');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -20,6 +21,7 @@ const PORT = process.env.PORT || 3001;
 
     app.use('/api/exhibits', exhibitsRouter);
     app.use('/api/inspections', inspectionsRouter);
+    app.use('/api/logs', logsRouter);
 
     const clientDist = path.join(__dirname, '..', '..', 'client', 'dist');
     if (fs.existsSync(clientDist)) {

@@ -102,3 +102,18 @@ export function exportInspections(zone = null) {
       window.URL.revokeObjectURL(url);
     });
 }
+
+export function getOperationLogs(type = null, limit = null) {
+  let url = '/logs';
+  const params = [];
+  if (type) {
+    params.push(`type=${encodeURIComponent(type)}`);
+  }
+  if (limit) {
+    params.push(`limit=${limit}`);
+  }
+  if (params.length > 0) {
+    url += '?' + params.join('&');
+  }
+  return request(url);
+}

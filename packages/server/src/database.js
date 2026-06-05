@@ -10,8 +10,10 @@ if (!fs.existsSync(dataDir)) {
 
 let exhibits = [];
 let inspections = [];
+let operationLogs = [];
 let nextExhibitId = 1;
 let nextInspectionId = 1;
+let nextOperationLogId = 1;
 
 function loadData() {
   if (fs.existsSync(dataFile)) {
@@ -19,8 +21,10 @@ function loadData() {
       const data = JSON.parse(fs.readFileSync(dataFile, 'utf8'));
       exhibits = data.exhibits || [];
       inspections = data.inspections || [];
+      operationLogs = data.operationLogs || [];
       nextExhibitId = data.nextExhibitId || 1;
       nextInspectionId = data.nextInspectionId || 1;
+      nextOperationLogId = data.nextOperationLogId || 1;
     } catch (e) {
       console.error('加载数据失败，使用初始数据');
       seedData();
@@ -34,8 +38,10 @@ function saveData() {
   const data = {
     exhibits,
     inspections,
+    operationLogs,
     nextExhibitId,
-    nextInspectionId
+    nextInspectionId,
+    nextOperationLogId
   };
   fs.writeFileSync(dataFile, JSON.stringify(data, null, 2), 'utf8');
 }
@@ -163,6 +169,23 @@ function getAllInspections(zone = null) {
   return Promise.resolve(result);
 }
 
+function createOperationLog(type, objectName, details = {}) {
+  const id = nextOperationLogId++;
+  const now = new Date().toISOString();
+  
+  const log = {
+    id,
+    type,
+    object_name: objectName,
+    details,
+    created_at: now
+  };
+  
+  operationLogs.unshift(log);
+  saveData();
+  return Promise.resolve(log);
+}
+
 function createExhibit(name, zone, description) {
   const id = nextExhibitId++;
   const now = new Date().toISOString();
@@ -178,6 +201,7 @@ function createExhibit(name, zone, description) {
   };
   
   exhibits.push(exhibit);
+  createOperationLog('create_exhibit', name, { zone, description });
   saveData();
   return Promise.resolve(exhibit);
 }
@@ -201,6 +225,7 @@ function createInspection(exhibitId, inspector, status, remarks) {
   if (exhibit) {
     exhibit.status = status;
     exhibit.updated_at = now;
+    createOperationLog('create_inspection', exhibit.name, { inspector, status, remarks });
   }
   
   saveData();
@@ -419,6 +444,20 @@ function getOverdueExhibits(hours = 24, zone = null) {
   return Promise.resolve(overdueExhibits);
 }
 
+function getOperationLogs(type = null, limit = null) {
+  let result = [...operationLogs];
+  
+  if (type) {
+    result = result.filter(log => log.type === type);
+  }
+  
+  if (limit) {
+    result = result.slice(0, limit);
+  }
+  
+  return Promise.resolve(result);
+}
+
 module.exports = {
   initDatabase,
   getAllExhibits,
@@ -432,5 +471,7 @@ module.exports = {
   getAbnormalExhibits,
   getInspectorWorkloadStats,
   getZoneOverviewStats,
-  getOverdueExhibits
+  getOverdueExhibits,
+  getOperationLogs,
+  createOperationLog
 };

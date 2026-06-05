@@ -4,6 +4,7 @@ import InspectionHistory from './components/InspectionHistory.jsx';
 import Dashboard from './components/Dashboard.jsx';
 import InspectorWorkload from './components/InspectorWorkload.jsx';
 import ZoneOverview from './components/ZoneOverview.jsx';
+import OperationLogs from './components/OperationLogs.jsx';
 import { getZones } from './api/index.js';
 
 function App() {
@@ -78,6 +79,12 @@ function App() {
         >
           👥 工作量统计
         </button>
+        <button
+          className={`nav-tab ${activeTab === 'logs' ? 'active' : ''}`}
+          onClick={() => setActiveTab('logs')}
+        >
+          📋 操作日志
+        </button>
       </nav>
 
       <main className="content">
@@ -99,6 +106,8 @@ function App() {
             selectedZone={selectedZone}
             onZoneChange={setSelectedZone}
           />
+        ) : activeTab === 'logs' ? (
+          <OperationLogs />
         ) : (
           <InspectorWorkload />
         )}
