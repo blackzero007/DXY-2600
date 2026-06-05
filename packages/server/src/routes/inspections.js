@@ -1,10 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const { getAllInspections, createInspection, getExhibitById, getTodayInspectionStats } = require('../database');
+const { getAllInspections, createInspection, getExhibitById, getTodayInspectionStats, getInspectorWorkloadStats } = require('../database');
 
 router.get('/stats/today', async (req, res) => {
   try {
     const stats = await getTodayInspectionStats();
+    res.json(stats);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/stats/inspectors', async (req, res) => {
+  try {
+    const stats = await getInspectorWorkloadStats();
     res.json(stats);
   } catch (error) {
     res.status(500).json({ error: error.message });

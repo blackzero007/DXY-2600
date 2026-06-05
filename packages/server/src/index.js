@@ -44,7 +44,8 @@ const PORT = process.env.PORT || 3001;
     console.log(`   GET  /api/exhibits/:id       - 获取展品详情`);
     console.log(`   POST /api/inspections        - 创建巡检记录`);
     console.log(`   GET  /api/inspections        - 获取所有巡检记录`);
-    console.log(`   GET  /api/inspections/stats/today - 获取今日巡检统计\n`);
+    console.log(`   GET  /api/inspections/stats/today - 获取今日巡检统计`);
+    console.log(`   GET  /api/inspections/stats/inspectors - 获取巡检员工作量统计\n`);
     });
   } catch (error) {
     console.error('启动失败:', error);

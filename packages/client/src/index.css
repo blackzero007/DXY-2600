@@ -940,6 +940,242 @@ body {
   color: #ef4444;
 }
 
+.inspector-workload {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.workload-header {
+  text-align: center;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.workload-header h2 {
+  font-size: 1.8rem;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.workload-subtitle {
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.workload-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
+}
+
+.summary-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  padding: 20px;
+  border-radius: 12px;
+  color: white;
+  transition: transform 0.3s ease;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.summary-card:hover {
+  transform: translateY(-3px);
+}
+
+.summary-card:nth-child(2) {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.summary-card:nth-child(3) {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.summary-icon {
+  font-size: 2.5rem;
+}
+
+.summary-content {
+  flex: 1;
+}
+
+.summary-number {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.summary-label {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+.workload-list h3,
+.workload-table-section h3 {
+  font-size: 1.2rem;
+  color: #1f2937;
+  margin-bottom: 20px;
+}
+
+.inspector-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.inspector-card {
+  display: flex;
+  gap: 15px;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 20px;
+  border-left: 4px solid #667eea;
+  transition: all 0.3s ease;
+}
+
+.inspector-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.inspector-rank {
+  display: flex;
+  align-items: flex-start;
+}
+
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: white;
+  background: #9ca3af;
+}
+
+.rank-badge.rank-1 {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.4);
+}
+
+.rank-badge.rank-2 {
+  background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+}
+
+.rank-badge.rank-3 {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+}
+
+.rank-badge.inline-rank {
+  width: 28px;
+  height: 28px;
+  font-size: 0.8rem;
+}
+
+.inspector-info {
+  flex: 1;
+}
+
+.inspector-header {
+  margin-bottom: 12px;
+}
+
+.inspector-name {
+  font-size: 1.15rem;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+.inspector-stats {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 12px;
+}
+
+.inspector-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.inspector-stat .stat-label {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.inspector-stat .stat-value {
+  font-size: 1.3rem;
+  font-weight: 700;
+}
+
+.inspector-stat .stat-value.total {
+  color: #667eea;
+}
+
+.inspector-stat .stat-value.abnormal {
+  color: #ef4444;
+}
+
+.inspector-progress {
+  margin-bottom: 12px;
+}
+
+.progress-bar-bg {
+  height: 8px;
+  background: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.inspector-meta {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.meta-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.meta-icon {
+  font-size: 0.9rem;
+}
+
+.count-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.85rem;
+}
+
+.count-badge.total {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+.count-badge.abnormal {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.workload-table-section {
+  margin-top: 10px;
+}
+
 @media (max-width: 768px) {
   .app {
     padding: 10px;
@@ -995,5 +1231,21 @@ body {
   .abnormal-meta {
     flex-direction: column;
     gap: 8px;
+  }
+
+  .workload-summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .summary-icon {
+    font-size: 2rem;
+  }
+
+  .summary-number {
+    font-size: 1.5rem;
+  }
+
+  .inspector-cards {
+    grid-template-columns: 1fr;
   }
 }

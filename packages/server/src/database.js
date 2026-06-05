@@ -265,6 +265,38 @@ function getTodayInspectionStats() {
   });
 }
 
+function getInspectorWorkloadStats() {
+  const inspectorMap = new Map();
+
+  inspections.forEach(inspection => {
+    const { inspector, status, created_at } = inspection;
+
+    if (!inspectorMap.has(inspector)) {
+      inspectorMap.set(inspector, {
+        inspector,
+        totalCount: 0,
+        abnormalCount: 0,
+        lastInspectionTime: null
+      });
+    }
+
+    const stats = inspectorMap.get(inspector);
+    stats.totalCount++;
+
+    if (status === 'abnormal') {
+      stats.abnormalCount++;
+    }
+
+    if (!stats.lastInspectionTime || new Date(created_at) > new Date(stats.lastInspectionTime)) {
+      stats.lastInspectionTime = created_at;
+    }
+  });
+
+  const result = [...inspectorMap.values()].sort((a, b) => b.totalCount - a.totalCount);
+
+  return Promise.resolve(result);
+}
+
 module.exports = {
   initDatabase,
   getAllExhibits,
@@ -274,5 +306,6 @@ module.exports = {
   createInspection,
   getZones,
   getTodayInspectionStats,
-  getAbnormalExhibits
+  getAbnormalExhibits,
+  getInspectorWorkloadStats
 };

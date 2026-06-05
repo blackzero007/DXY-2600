@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ExhibitList from './components/ExhibitList.jsx';
 import InspectionHistory from './components/InspectionHistory.jsx';
 import Dashboard from './components/Dashboard.jsx';
+import InspectorWorkload from './components/InspectorWorkload.jsx';
 import { getZones } from './api/index.js';
 
 function App() {
@@ -60,6 +61,12 @@ function App() {
         >
           📝 巡检历史
         </button>
+        <button
+          className={`nav-tab ${activeTab === 'workload' ? 'active' : ''}`}
+          onClick={() => setActiveTab('workload')}
+        >
+          👥 工作量统计
+        </button>
       </nav>
 
       <main className="content">
@@ -72,12 +79,14 @@ function App() {
             onZoneChange={setSelectedZone}
             onShowToast={showToast}
           />
-        ) : (
+        ) : activeTab === 'history' ? (
           <InspectionHistory
             zones={zones}
             selectedZone={selectedZone}
             onZoneChange={setSelectedZone}
           />
+        ) : (
+          <InspectorWorkload />
         )}
       </main>
 

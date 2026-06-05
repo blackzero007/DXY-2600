@@ -50,6 +50,10 @@ export function getTodayInspectionStats() {
   return request('/inspections/stats/today');
 }
 
+export function getInspectorWorkloadStats() {
+  return request('/inspections/stats/inspectors');
+}
+
 export function getAbnormalExhibits() {
   return request('/exhibits/abnormal/list');
 }
