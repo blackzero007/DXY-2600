@@ -139,7 +139,8 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
   const filteredExhibits = exhibits.filter(exhibit => {
     if (!searchKeyword.trim()) return true;
     const keyword = searchKeyword.toLowerCase().trim();
-    return exhibit.name.toLowerCase().includes(keyword);
+    const exhibitName = exhibit && exhibit.name ? String(exhibit.name) : '';
+    return exhibitName.toLowerCase().includes(keyword);
   });
 
   const stats = {
