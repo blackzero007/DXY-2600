@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { getInspections } from '../api/index.js';
+import { getInspections, exportInspections } from '../api/index.js';
 import InspectionDetail from './InspectionDetail.jsx';
 
 function InspectionHistory({ zones, selectedZone, onZoneChange }) {
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedRecord, setSelectedRecord] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadInspections();
@@ -27,6 +28,19 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
     return new Date(dateStr).toLocaleString('zh-CN');
   }
 
+  async function handleExport() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await exportInspections(selectedZone);
+    } catch (error) {
+      console.error('导出失败:', error);
+      alert('导出失败，请稍后重试');
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div>
       <div className="filter-bar">
@@ -41,6 +55,13 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
             <option key={zone} value={zone}>{zone}</option>
           ))}
         </select>
+        <button
+          className="btn-export"
+          onClick={handleExport}
+          disabled={exporting || inspections.length === 0}
+        >
+          {exporting ? '导出中...' : '📥 导出 CSV'}
+        </button>
       </div>
 
       {loading ? (

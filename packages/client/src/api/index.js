@@ -76,3 +76,29 @@ export function createExhibit(data) {
     body: JSON.stringify(data)
   });
 }
+
+export function exportInspections(zone = null) {
+  let url = `${API_BASE}/inspections/export`;
+  if (zone) {
+    url += `?zone=${encodeURIComponent(zone)}`;
+  }
+  return fetch(url)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('导出失败');
+      }
+      return response.blob();
+    })
+    .then(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10);
+      a.download = `巡检历史_${dateStr}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    });
+}
