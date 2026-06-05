@@ -112,7 +112,20 @@ function getAllExhibits(zone = null) {
 }
 
 function getExhibitById(id) {
-  return Promise.resolve(exhibits.find(e => e.id === parseInt(id)));
+  const exhibit = exhibits.find(e => e.id === parseInt(id));
+  if (!exhibit) return Promise.resolve(null);
+  
+  const lastInspection = inspections
+    .filter(i => i.exhibit_id === parseInt(id))
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+  
+  return Promise.resolve({
+    ...exhibit,
+    last_status: lastInspection ? lastInspection.status : null,
+    last_inspected: lastInspection ? lastInspection.created_at : null,
+    last_inspector: lastInspection ? lastInspection.inspector : null,
+    last_remarks: lastInspection ? lastInspection.remarks : null
+  });
 }
 
 function getExhibitInspections(exhibitId) {

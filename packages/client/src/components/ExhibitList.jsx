@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { getExhibits, createInspection, getExhibitInspections } from '../api/index.js';
+import { getExhibits, createInspection, getExhibitInspections, getExhibitById } from '../api/index.js';
 import InspectionModal from './InspectionModal.jsx';
+import ExhibitDetail from './ExhibitDetail.jsx';
 
 function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
   const [exhibits, setExhibits] = useState([]);
@@ -10,6 +11,9 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [exhibitHistory, setExhibitHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailExhibit, setDetailExhibit] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(false);
 
   useEffect(() => {
     loadExhibits();
@@ -28,9 +32,30 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
     }
   }
 
+  async function handleViewDetail(exhibit) {
+    setSelectedExhibit(exhibit);
+    setDetailLoading(true);
+    setShowDetailModal(true);
+    try {
+      const data = await getExhibitById(exhibit.id);
+      setDetailExhibit(data);
+    } catch (error) {
+      console.error('加载展品详情失败:', error);
+      onShowToast('加载展品详情失败', 'error');
+    } finally {
+      setDetailLoading(false);
+    }
+  }
+
   function handleInspect(exhibit) {
+    setShowDetailModal(false);
     setSelectedExhibit(exhibit);
     setShowModal(true);
+  }
+
+  function handleViewHistoryFromDetail(exhibit) {
+    setShowDetailModal(false);
+    handleViewHistory(exhibit);
   }
 
   async function handleViewHistory(exhibit) {
@@ -126,6 +151,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
             <div
               key={exhibit.id}
               className={`exhibit-card ${exhibit.last_status === 'abnormal' ? 'abnormal' : ''}`}
+              onClick={() => handleViewDetail(exhibit)}
             >
               <span className="zone-tag">{exhibit.zone}</span>
               <h3>{exhibit.name}</h3>
@@ -143,10 +169,10 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
                 <small>上次巡检: {formatDate(exhibit.last_inspected)}</small>
               </div>
               <div className="card-actions">
-                <button className="btn btn-primary" onClick={() => handleInspect(exhibit)}>
+                <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); handleInspect(exhibit); }}>
                   📝 开始巡检
                 </button>
-                <button className="btn btn-secondary" onClick={() => handleViewHistory(exhibit)}>
+                <button className="btn btn-secondary" onClick={(e) => { e.stopPropagation(); handleViewHistory(exhibit); }}>
                   📋 历史记录
                 </button>
               </div>
@@ -207,6 +233,23 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast }) {
                 关闭
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showDetailModal && detailExhibit && !detailLoading && (
+        <ExhibitDetail
+          exhibit={detailExhibit}
+          onClose={() => setShowDetailModal(false)}
+          onInspect={handleInspect}
+          onViewHistory={handleViewHistoryFromDetail}
+        />
+      )}
+
+      {showDetailModal && detailLoading && (
+        <div className="modal-overlay" onClick={() => setShowDetailModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="loading">加载中...</div>
           </div>
         </div>
       )}
