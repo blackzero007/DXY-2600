@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { getInspections } from '../api/index.js';
+import InspectionDetail from './InspectionDetail.jsx';
 
 function InspectionHistory({ zones, selectedZone, onZoneChange }) {
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRecord, setSelectedRecord] = useState(null);
 
   useEffect(() => {
     loadInspections();
@@ -64,7 +66,7 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
             </thead>
             <tbody>
               {inspections.map(record => (
-                <tr key={record.id}>
+                <tr key={record.id} className="clickable-row" onClick={() => setSelectedRecord(record)}>
                   <td>
                     <strong>{record.exhibit_name}</strong>
                   </td>
@@ -82,6 +84,13 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {selectedRecord && (
+        <InspectionDetail
+          record={selectedRecord}
+          onClose={() => setSelectedRecord(null)}
+        />
       )}
     </div>
   );
