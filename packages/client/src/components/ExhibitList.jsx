@@ -19,6 +19,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
   const [overdueExhibits, setOverdueExhibits] = useState([]);
   const [overdueHours, setOverdueHours] = useState(24);
   const [showReminder, setShowReminder] = useState(true);
+  const [searchKeyword, setSearchKeyword] = useState('');
 
   useEffect(() => {
     loadExhibits();
@@ -135,11 +136,17 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
     return new Date(dateStr).toLocaleString('zh-CN');
   }
 
+  const filteredExhibits = exhibits.filter(exhibit => {
+    if (!searchKeyword.trim()) return true;
+    const keyword = searchKeyword.toLowerCase().trim();
+    return exhibit.name.toLowerCase().includes(keyword);
+  });
+
   const stats = {
-    total: exhibits.length,
-    normal: exhibits.filter(e => e.last_status === 'normal').length,
-    abnormal: exhibits.filter(e => e.last_status === 'abnormal').length,
-    neverInspected: exhibits.filter(e => !e.last_status).length
+    total: filteredExhibits.length,
+    normal: filteredExhibits.filter(e => e.last_status === 'normal').length,
+    abnormal: filteredExhibits.filter(e => e.last_status === 'abnormal').length,
+    neverInspected: filteredExhibits.filter(e => !e.last_status).length
   };
 
   return (
@@ -156,6 +163,25 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
             <option key={zone} value={zone}>{zone}</option>
           ))}
         </select>
+        <div className="search-container">
+          <span className="search-icon">🔍</span>
+          <input
+            type="text"
+            className="search-input"
+            placeholder="搜索展品名称..."
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+          />
+          {searchKeyword && (
+            <button
+              className="search-clear"
+              onClick={() => setSearchKeyword('')}
+              title="清除搜索"
+            >
+              ✕
+            </button>
+          )}
+        </div>
         <div style={{ marginLeft: 'auto' }}>
           <button className="btn btn-primary" onClick={() => setShowAddForm(true)}>
             ➕ 新增展品
@@ -269,15 +295,24 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
 
       {loading ? (
         <div className="loading">加载中...</div>
-      ) : exhibits.length === 0 ? (
+      ) : filteredExhibits.length === 0 ? (
         <div className="empty-state">
           <div className="icon">📭</div>
-          <h3>暂无展品</h3>
-          <p>该展区下没有展品</p>
+          {searchKeyword ? (
+            <>
+              <h3>未找到匹配的展品</h3>
+              <p>没有找到包含"{searchKeyword}"的展品，请尝试其他关键词</p>
+            </>
+          ) : (
+            <>
+              <h3>暂无展品</h3>
+              <p>该展区下没有展品</p>
+            </>
+          )}
         </div>
       ) : (
         <div className="exhibit-grid">
-          {exhibits.map(exhibit => (
+          {filteredExhibits.map(exhibit => (
             <div
               key={exhibit.id}
               className={`exhibit-card ${exhibit.last_status === 'abnormal' ? 'abnormal' : ''}`}
