@@ -93,6 +93,10 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: '状态值无效' });
   }
 
+  if (status === 'abnormal' && (!remarks || !remarks.trim())) {
+    return res.status(400).json({ error: '异常状态下备注为必填项' });
+  }
+
   try {
     const exhibit = await getExhibitById(exhibit_id);
     if (!exhibit) {

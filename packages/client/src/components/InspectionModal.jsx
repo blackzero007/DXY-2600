@@ -11,6 +11,9 @@ function InspectionModal({ exhibit, onClose, onSubmit }) {
     if (!inspector.trim()) {
       newErrors.inspector = '请输入巡检员姓名';
     }
+    if (status === 'abnormal' && !remarks.trim()) {
+      newErrors.remarks = '异常状态下备注为必填项';
+    }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   }
@@ -69,13 +72,21 @@ function InspectionModal({ exhibit, onClose, onSubmit }) {
           </div>
 
           <div className="form-group">
-            <label htmlFor="remarks">备注说明</label>
+            <label htmlFor="remarks">
+              备注说明 {status === 'abnormal' && <span style={{ color: '#ef4444' }}>*</span>}
+            </label>
             <textarea
               id="remarks"
               value={remarks}
               onChange={(e) => setRemarks(e.target.value)}
-              placeholder="请输入巡检备注（可选）"
+              placeholder={status === 'abnormal' ? '请输入异常备注说明（必填）' : '请输入巡检备注（可选）'}
+              className={errors.remarks ? 'error' : ''}
             />
+            {errors.remarks && (
+              <p style={{ color: '#ef4444', fontSize: '0.85rem', marginTop: '5px' }}>
+                {errors.remarks}
+              </p>
+            )}
           </div>
 
           <div className="modal-actions">
