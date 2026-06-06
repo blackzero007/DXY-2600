@@ -143,8 +143,12 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
       loadExhibits();
       loadOverdueExhibits();
       if (showHistoryModal && selectedExhibit) {
-        const historyData = await getExhibitInspections(selectedExhibit.id);
-        setExhibitHistory(historyData);
+        try {
+          const historyData = await getExhibitInspections(selectedExhibit.id);
+          setExhibitHistory(historyData);
+        } catch (historyError) {
+          console.error('刷新历史记录失败:', historyError);
+        }
       }
     } catch (error) {
       console.error('提交巡检记录失败:', error);
