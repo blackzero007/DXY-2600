@@ -282,7 +282,7 @@ body {
   color: #991b1b;
 }
 
-.abnormal-remarks {
+.card-abnormal-remarks {
   margin-top: 12px;
   padding: 10px 12px;
   background: #fee2e2;
@@ -292,14 +292,14 @@ body {
   line-height: 1.5;
 }
 
-.abnormal-remarks-label {
+.card-abnormal-remarks-label {
   font-weight: 600;
   color: #991b1b;
   display: block;
   margin-bottom: 4px;
 }
 
-.abnormal-remarks-text {
+.card-abnormal-remarks-text {
   color: #7f1d1d;
   display: -webkit-box;
   -webkit-line-clamp: 2;

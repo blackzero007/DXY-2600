@@ -357,9 +357,9 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
                 <small>上次巡检: {formatDate(exhibit.last_inspected)}</small>
               </div>
               {exhibit.last_status === 'abnormal' && exhibit.last_remarks && (
-                <div className="abnormal-remarks">
-                  <span className="abnormal-remarks-label">最近异常备注：</span>
-                  <span className="abnormal-remarks-text">{exhibit.last_remarks}</span>
+                <div className="card-abnormal-remarks">
+                  <span className="card-abnormal-remarks-label">最近异常备注：</span>
+                  <span className="card-abnormal-remarks-text">{exhibit.last_remarks}</span>
                 </div>
               )}
               <div className="card-actions">
