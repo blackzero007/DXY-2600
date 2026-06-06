@@ -19,8 +19,12 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [remarksKeyword, setRemarksKeyword] = useState('');
+  const [remarksInput, setRemarksInput] = useState('');
   const abortControllerRef = useRef(null);
   const requestIdRef = useRef(0);
+
+  const QUICK_KEYWORDS = ['损伤', '修复', '良好'];
 
   useEffect(() => {
     loadInspections();
@@ -29,7 +33,7 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
         abortControllerRef.current.abort();
       }
     };
-  }, [selectedZone, selectedStatus, sortBy, sortOrder]);
+  }, [selectedZone, selectedStatus, sortBy, sortOrder, remarksKeyword]);
 
   async function loadInspections() {
     if (abortControllerRef.current) {
@@ -43,7 +47,7 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
     setError(null);
     try {
       const status = selectedStatus === 'all' ? null : selectedStatus;
-      const data = await getInspections(selectedZone, status, sortBy, sortOrder, controller.signal);
+      const data = await getInspections(selectedZone, status, sortBy, sortOrder, remarksKeyword || null, controller.signal);
       if (controller.signal.aborted) return;
       if (currentRequestId !== requestIdRef.current) return;
       setInspections(data);
@@ -61,6 +65,26 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
         setLoading(false);
       }
     }
+  }
+
+  function handleRemarksSearch() {
+    setRemarksKeyword(remarksInput.trim());
+  }
+
+  function handleRemarksKeyDown(e) {
+    if (e.key === 'Enter') {
+      handleRemarksSearch();
+    }
+  }
+
+  function handleQuickKeyword(keyword) {
+    setRemarksInput(keyword);
+    setRemarksKeyword(keyword);
+  }
+
+  function clearRemarksSearch() {
+    setRemarksInput('');
+    setRemarksKeyword('');
   }
 
   function handleSort(columnKey) {
@@ -88,7 +112,7 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
     setExporting(true);
     try {
       const status = selectedStatus === 'all' ? null : selectedStatus;
-      await exportInspections(selectedZone, status, sortBy, sortOrder);
+      await exportInspections(selectedZone, status, sortBy, sortOrder, remarksKeyword || null);
     } catch (error) {
       console.error('导出失败:', error);
       alert('导出失败，请稍后重试');
@@ -145,6 +169,39 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
         >
           {exporting ? '导出中...' : '📥 导出 CSV'}
         </button>
+      </div>
+
+      <div className="search-bar">
+        <label htmlFor="remarks-search">备注关键字搜索：</label>
+        <input
+          type="text"
+          id="remarks-search"
+          className="remarks-search-input"
+          placeholder="请输入备注关键字，如：损伤、修复、良好"
+          value={remarksInput}
+          onChange={(e) => setRemarksInput(e.target.value)}
+          onKeyDown={handleRemarksKeyDown}
+        />
+        <button className="btn-search" onClick={handleRemarksSearch}>
+          🔍 搜索
+        </button>
+        {remarksKeyword && (
+          <button className="btn-clear-search" onClick={clearRemarksSearch}>
+            ✕ 清除
+          </button>
+        )}
+        <div className="quick-keywords">
+          <span className="quick-keywords-label">快捷搜索：</span>
+          {QUICK_KEYWORDS.map(keyword => (
+            <button
+              key={keyword}
+              className={`quick-keyword-tag ${remarksKeyword === keyword ? 'active' : ''}`}
+              onClick={() => handleQuickKeyword(keyword)}
+            >
+              {keyword}
+            </button>
+          ))}
+        </div>
       </div>
 
       {loading ? (

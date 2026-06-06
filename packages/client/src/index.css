@@ -109,6 +109,119 @@ body {
   border-color: #667eea;
 }
 
+.search-bar {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 25px;
+  flex-wrap: wrap;
+  align-items: center;
+  padding: 15px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+  border-radius: 10px;
+  border: 1px solid #c7d2fe;
+}
+
+.search-bar label {
+  font-weight: 600;
+  color: #4338ca;
+}
+
+.remarks-search-input {
+  padding: 10px 16px;
+  border: 2px solid #c7d2fe;
+  border-radius: 8px;
+  font-size: 1rem;
+  width: 280px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  background: white;
+}
+
+.remarks-search-input:hover {
+  border-color: #667eea;
+}
+
+.remarks-search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.remarks-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.btn-search {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-search:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.btn-clear-search {
+  padding: 10px 16px;
+  background: white;
+  color: #6b7280;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-clear-search:hover {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: #fef2f2;
+}
+
+.quick-keywords {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.quick-keywords-label {
+  font-weight: 600;
+  color: #4338ca;
+  font-size: 0.9rem;
+}
+
+.quick-keyword-tag {
+  padding: 6px 14px;
+  background: white;
+  color: #4338ca;
+  border: 2px solid #c7d2fe;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.quick-keyword-tag:hover {
+  background: #e0e7ff;
+  border-color: #667eea;
+}
+
+.quick-keyword-tag.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
 .search-container {
   position: relative;
   display: flex;

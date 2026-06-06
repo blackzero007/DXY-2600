@@ -151,7 +151,7 @@ function getExhibitInspections(exhibitId) {
   return Promise.resolve(result);
 }
 
-function getAllInspections(zone = null, status = null, sortBy = 'created_at', sortOrder = 'desc') {
+function getAllInspections(zone = null, status = null, sortBy = 'created_at', sortOrder = 'desc', remarksKeyword = null) {
   let result = inspections.map(i => {
     const exhibit = exhibits.find(e => e.id === i.exhibit_id);
     return {
@@ -167,6 +167,14 @@ function getAllInspections(zone = null, status = null, sortBy = 'created_at', so
 
   if (status) {
     result = result.filter(i => i.status === status);
+  }
+
+  if (remarksKeyword && remarksKeyword.trim()) {
+    const keyword = remarksKeyword.trim().toLowerCase();
+    result = result.filter(i => {
+      const remarks = (i.remarks || '').toLowerCase();
+      return remarks.includes(keyword);
+    });
   }
 
   const sortableFields = ['created_at', 'exhibit_name', 'exhibit_zone', 'inspector', 'status'];

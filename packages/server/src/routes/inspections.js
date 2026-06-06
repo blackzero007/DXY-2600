@@ -24,9 +24,9 @@ function formatDateCN(dateStr) {
 }
 
 router.get('/export', async (req, res) => {
-  const { zone, status, sortBy, sortOrder } = req.query;
+  const { zone, status, sortBy, sortOrder, remarksKeyword } = req.query;
   try {
-    const inspections = await getAllInspections(zone, status, sortBy, sortOrder);
+    const inspections = await getAllInspections(zone, status, sortBy, sortOrder, remarksKeyword);
     
     const headers = ['展品名称', '展区', '巡检员', '状态', '备注', '巡检时间'];
     
@@ -73,9 +73,9 @@ router.get('/stats/inspectors', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-  const { zone, status, sortBy, sortOrder } = req.query;
+  const { zone, status, sortBy, sortOrder, remarksKeyword } = req.query;
   try {
-    const inspections = await getAllInspections(zone, status, sortBy, sortOrder);
+    const inspections = await getAllInspections(zone, status, sortBy, sortOrder, remarksKeyword);
     res.json(inspections);
   } catch (error) {
     res.status(500).json({ error: error.message });
