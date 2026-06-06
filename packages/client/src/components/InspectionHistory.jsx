@@ -2,6 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { getInspections, exportInspections } from '../api/index.js';
 import InspectionDetail from './InspectionDetail.jsx';
 
+const SORTABLE_COLUMNS = [
+  { key: 'exhibit_name', label: '展品名称' },
+  { key: 'exhibit_zone', label: '所属展区' },
+  { key: 'inspector', label: '巡检员' },
+  { key: 'status', label: '状态' },
+  { key: 'created_at', label: '巡检时间' }
+];
+
 function InspectionHistory({ zones, selectedZone, onZoneChange }) {
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -9,6 +17,8 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
   const [selectedRecord, setSelectedRecord] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState('all');
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortOrder, setSortOrder] = useState('desc');
   const abortControllerRef = useRef(null);
   const requestIdRef = useRef(0);
 
@@ -19,7 +29,7 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
         abortControllerRef.current.abort();
       }
     };
-  }, [selectedZone, selectedStatus]);
+  }, [selectedZone, selectedStatus, sortBy, sortOrder]);
 
   async function loadInspections() {
     if (abortControllerRef.current) {
@@ -33,7 +43,7 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
     setError(null);
     try {
       const status = selectedStatus === 'all' ? null : selectedStatus;
-      const data = await getInspections(selectedZone, status, controller.signal);
+      const data = await getInspections(selectedZone, status, sortBy, sortOrder, controller.signal);
       if (controller.signal.aborted) return;
       if (currentRequestId !== requestIdRef.current) return;
       setInspections(data);
@@ -53,6 +63,22 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
     }
   }
 
+  function handleSort(columnKey) {
+    if (sortBy === columnKey) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(columnKey);
+      setSortOrder('desc');
+    }
+  }
+
+  function getSortIcon(columnKey) {
+    if (sortBy !== columnKey) {
+      return ' ↕';
+    }
+    return sortOrder === 'asc' ? ' ↑' : ' ↓';
+  }
+
   function formatDate(dateStr) {
     return new Date(dateStr).toLocaleString('zh-CN');
   }
@@ -62,7 +88,7 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
     setExporting(true);
     try {
       const status = selectedStatus === 'all' ? null : selectedStatus;
-      await exportInspections(selectedZone, status);
+      await exportInspections(selectedZone, status, sortBy, sortOrder);
     } catch (error) {
       console.error('导出失败:', error);
       alert('导出失败，请稍后重试');
@@ -95,6 +121,23 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
           <option value="normal">✅ 正常</option>
           <option value="abnormal">⚠️ 异常</option>
         </select>
+        <label htmlFor="sort-by-filter">排序字段：</label>
+        <select
+          id="sort-by-filter"
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value)}
+        >
+          {SORTABLE_COLUMNS.map(col => (
+            <option key={col.key} value={col.key}>{col.label}</option>
+          ))}
+        </select>
+        <button
+          className="btn-sort-toggle"
+          onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+          title={sortOrder === 'asc' ? '点击切换为降序' : '点击切换为升序'}
+        >
+          {sortOrder === 'asc' ? '↑ 升序' : '↓ 降序'}
+        </button>
         <button
           className="btn-export"
           onClick={handleExport}
@@ -126,12 +169,42 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
           <table>
             <thead>
               <tr>
-                <th>展品名称</th>
-                <th>所属展区</th>
-                <th>巡检员</th>
-                <th>状态</th>
+                <th 
+                  className="sortable-header"
+                  onClick={() => handleSort('exhibit_name')}
+                  title="点击排序"
+                >
+                  展品名称{getSortIcon('exhibit_name')}
+                </th>
+                <th 
+                  className="sortable-header"
+                  onClick={() => handleSort('exhibit_zone')}
+                  title="点击排序"
+                >
+                  所属展区{getSortIcon('exhibit_zone')}
+                </th>
+                <th 
+                  className="sortable-header"
+                  onClick={() => handleSort('inspector')}
+                  title="点击排序"
+                >
+                  巡检员{getSortIcon('inspector')}
+                </th>
+                <th 
+                  className="sortable-header"
+                  onClick={() => handleSort('status')}
+                  title="点击排序"
+                >
+                  状态{getSortIcon('status')}
+                </th>
                 <th>备注</th>
-                <th>巡检时间</th>
+                <th 
+                  className="sortable-header"
+                  onClick={() => handleSort('created_at')}
+                  title="点击排序"
+                >
+                  巡检时间{getSortIcon('created_at')}
+                </th>
               </tr>
             </thead>
             <tbody>

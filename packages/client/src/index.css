@@ -640,6 +640,34 @@ body {
   color: #374151;
 }
 
+.history-table .sortable-header {
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.history-table .sortable-header:hover {
+  background: #eef2ff;
+  color: #667eea;
+}
+
+.btn-sort-toggle {
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-sort-toggle:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
 .history-table tr:hover {
   background: #f9fafb;
 }

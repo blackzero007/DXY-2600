@@ -34,13 +34,19 @@ export function getZones() {
   return request('/exhibits/zones');
 }
 
-export function getInspections(zone = null, status = null, signal = null) {
+export function getInspections(zone = null, status = null, sortBy = 'created_at', sortOrder = 'desc', signal = null) {
   const params = [];
   if (zone) {
     params.push(`zone=${encodeURIComponent(zone)}`);
   }
   if (status) {
     params.push(`status=${encodeURIComponent(status)}`);
+  }
+  if (sortBy) {
+    params.push(`sortBy=${encodeURIComponent(sortBy)}`);
+  }
+  if (sortOrder) {
+    params.push(`sortOrder=${encodeURIComponent(sortOrder)}`);
   }
   const url = params.length > 0 ? `/inspections?${params.join('&')}` : '/inspections';
   const options = signal ? { signal } : {};
@@ -89,13 +95,19 @@ export function createExhibit(data) {
   });
 }
 
-export function exportInspections(zone = null, status = null) {
+export function exportInspections(zone = null, status = null, sortBy = 'created_at', sortOrder = 'desc') {
   const params = [];
   if (zone) {
     params.push(`zone=${encodeURIComponent(zone)}`);
   }
   if (status) {
     params.push(`status=${encodeURIComponent(status)}`);
+  }
+  if (sortBy) {
+    params.push(`sortBy=${encodeURIComponent(sortBy)}`);
+  }
+  if (sortOrder) {
+    params.push(`sortOrder=${encodeURIComponent(sortOrder)}`);
   }
   let url = `${API_BASE}/inspections/export`;
   if (params.length > 0) {

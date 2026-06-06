@@ -151,18 +151,16 @@ function getExhibitInspections(exhibitId) {
   return Promise.resolve(result);
 }
 
-function getAllInspections(zone = null, status = null) {
-  let result = inspections
-    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    .map(i => {
-      const exhibit = exhibits.find(e => e.id === i.exhibit_id);
-      return {
-        ...i,
-        exhibit_name: exhibit ? exhibit.name : '未知展品',
-        exhibit_zone: exhibit ? exhibit.zone : '未知展区'
-      };
-    });
-  
+function getAllInspections(zone = null, status = null, sortBy = 'created_at', sortOrder = 'desc') {
+  let result = inspections.map(i => {
+    const exhibit = exhibits.find(e => e.id === i.exhibit_id);
+    return {
+      ...i,
+      exhibit_name: exhibit ? exhibit.name : '未知展品',
+      exhibit_zone: exhibit ? exhibit.zone : '未知展区'
+    };
+  });
+
   if (zone) {
     result = result.filter(i => i.exhibit_zone === zone);
   }
@@ -170,7 +168,23 @@ function getAllInspections(zone = null, status = null) {
   if (status) {
     result = result.filter(i => i.status === status);
   }
-  
+
+  const sortableFields = ['created_at', 'exhibit_name', 'exhibit_zone', 'inspector', 'status'];
+  const validSortBy = sortableFields.includes(sortBy) ? sortBy : 'created_at';
+  const validSortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+
+  result.sort((a, b) => {
+    let comparison = 0;
+    if (validSortBy === 'created_at') {
+      comparison = new Date(a.created_at) - new Date(b.created_at);
+    } else {
+      const aVal = a[validSortBy] || '';
+      const bVal = b[validSortBy] || '';
+      comparison = String(aVal).localeCompare(String(bVal), 'zh-CN');
+    }
+    return validSortOrder === 'asc' ? comparison : -comparison;
+  });
+
   return Promise.resolve(result);
 }
 
