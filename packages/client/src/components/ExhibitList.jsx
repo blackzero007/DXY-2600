@@ -150,7 +150,8 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
       zone: String(exhibit.zone ?? ''),
       description: String(exhibit.description ?? ''),
       last_status: exhibit.last_status ?? null,
-      last_inspected: exhibit.last_inspected ?? null
+      last_inspected: exhibit.last_inspected ?? null,
+      last_remarks: exhibit.last_remarks ?? null
     };
   }
 
@@ -355,6 +356,12 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
                 </span>
                 <small>上次巡检: {formatDate(exhibit.last_inspected)}</small>
               </div>
+              {exhibit.last_status === 'abnormal' && exhibit.last_remarks && (
+                <div className="abnormal-remarks">
+                  <span className="abnormal-remarks-label">最近异常备注：</span>
+                  <span className="abnormal-remarks-text">{exhibit.last_remarks}</span>
+                </div>
+              )}
               <div className="card-actions">
                 <button className="btn btn-primary" onClick={(e) => { e.stopPropagation(); handleInspect(exhibit); }}>
                   📝 开始巡检

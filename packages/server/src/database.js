@@ -112,7 +112,8 @@ function getAllExhibits(zone = null) {
     return {
       ...exhibit,
       last_status: lastInspection ? lastInspection.status : null,
-      last_inspected: lastInspection ? lastInspection.created_at : null
+      last_inspected: lastInspection ? lastInspection.created_at : null,
+      last_remarks: lastInspection ? lastInspection.remarks : null
     };
   }));
 }
