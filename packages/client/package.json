@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node tests/port-config.test.cjs && node tests/detail-state.test.cjs && node tests/exhibit-list-refresh.test.cjs && node tests/search-robustness.test.cjs && node tests/zone-quick-stats.test.cjs"
+    "test": "node tests/port-config.test.cjs && node tests/detail-state.test.cjs && node tests/exhibit-list-refresh.test.cjs && node tests/search-robustness.test.cjs && node tests/zone-quick-stats.test.cjs && node tests/inspection-history-race.test.cjs && node tests/remarks-search-robustness.test.cjs"
   },
   "dependencies": {
     "react": "^18.3.1",

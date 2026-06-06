@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const { getAllInspections, createInspection, getExhibitById, getTodayInspectionStats, getInspectorWorkloadStats } = require('../database');
 
+function safeQueryParam(value) {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) {
+    return value.length > 0 ? String(value[0]) : null;
+  }
+  return String(value);
+}
+
 function escapeCSV(field) {
   if (field === null || field === undefined) return '';
   const str = String(field);
@@ -24,7 +32,11 @@ function formatDateCN(dateStr) {
 }
 
 router.get('/export', async (req, res) => {
-  const { zone, status, sortBy, sortOrder, remarksKeyword } = req.query;
+  const zone = safeQueryParam(req.query.zone);
+  const status = safeQueryParam(req.query.status);
+  const sortBy = safeQueryParam(req.query.sortBy);
+  const sortOrder = safeQueryParam(req.query.sortOrder);
+  const remarksKeyword = safeQueryParam(req.query.remarksKeyword);
   try {
     const inspections = await getAllInspections(zone, status, sortBy, sortOrder, remarksKeyword);
     
@@ -73,7 +85,11 @@ router.get('/stats/inspectors', async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-  const { zone, status, sortBy, sortOrder, remarksKeyword } = req.query;
+  const zone = safeQueryParam(req.query.zone);
+  const status = safeQueryParam(req.query.status);
+  const sortBy = safeQueryParam(req.query.sortBy);
+  const sortOrder = safeQueryParam(req.query.sortOrder);
+  const remarksKeyword = safeQueryParam(req.query.remarksKeyword);
   try {
     const inspections = await getAllInspections(zone, status, sortBy, sortOrder, remarksKeyword);
     res.json(inspections);

@@ -152,6 +152,20 @@ function getExhibitInspections(exhibitId) {
 }
 
 function getAllInspections(zone = null, status = null, sortBy = 'created_at', sortOrder = 'desc', remarksKeyword = null) {
+  function safeString(value) {
+    if (value === null || value === undefined) return null;
+    if (Array.isArray(value)) {
+      return value.length > 0 ? String(value[0]) : null;
+    }
+    return String(value);
+  }
+
+  const safeZone = safeString(zone);
+  const safeStatus = safeString(status);
+  const safeSortBy = safeString(sortBy) || 'created_at';
+  const safeSortOrder = safeString(sortOrder) || 'desc';
+  const safeRemarksKeyword = safeString(remarksKeyword);
+
   let result = inspections.map(i => {
     const exhibit = exhibits.find(e => e.id === i.exhibit_id);
     return {
@@ -161,16 +175,16 @@ function getAllInspections(zone = null, status = null, sortBy = 'created_at', so
     };
   });
 
-  if (zone) {
-    result = result.filter(i => i.exhibit_zone === zone);
+  if (safeZone) {
+    result = result.filter(i => i.exhibit_zone === safeZone);
   }
 
-  if (status) {
-    result = result.filter(i => i.status === status);
+  if (safeStatus) {
+    result = result.filter(i => i.status === safeStatus);
   }
 
-  if (remarksKeyword && remarksKeyword.trim()) {
-    const keyword = remarksKeyword.trim().toLowerCase();
+  if (safeRemarksKeyword && safeRemarksKeyword.trim()) {
+    const keyword = safeRemarksKeyword.trim().toLowerCase();
     result = result.filter(i => {
       const remarks = (i.remarks || '').toLowerCase();
       return remarks.includes(keyword);
@@ -178,8 +192,8 @@ function getAllInspections(zone = null, status = null, sortBy = 'created_at', so
   }
 
   const sortableFields = ['created_at', 'exhibit_name', 'exhibit_zone', 'inspector', 'status'];
-  const validSortBy = sortableFields.includes(sortBy) ? sortBy : 'created_at';
-  const validSortOrder = sortOrder === 'asc' ? 'asc' : 'desc';
+  const validSortBy = sortableFields.includes(safeSortBy) ? safeSortBy : 'created_at';
+  const validSortOrder = safeSortOrder === 'asc' ? 'asc' : 'desc';
 
   result.sort((a, b) => {
     let comparison = 0;

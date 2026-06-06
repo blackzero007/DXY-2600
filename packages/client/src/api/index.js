@@ -1,5 +1,13 @@
 const API_BASE = '/api';
 
+function safeTrim(value) {
+  if (value === null || value === undefined) return null;
+  if (Array.isArray(value)) {
+    return value.length > 0 ? String(value[0]).trim() : null;
+  }
+  return String(value).trim();
+}
+
 async function request(url, options = {}) {
   const response = await fetch(`${API_BASE}${url}`, {
     headers: {
@@ -48,8 +56,9 @@ export function getInspections(zone = null, status = null, sortBy = 'created_at'
   if (sortOrder) {
     params.push(`sortOrder=${encodeURIComponent(sortOrder)}`);
   }
-  if (remarksKeyword && remarksKeyword.trim()) {
-    params.push(`remarksKeyword=${encodeURIComponent(remarksKeyword.trim())}`);
+  const safeKeyword = safeTrim(remarksKeyword);
+  if (safeKeyword) {
+    params.push(`remarksKeyword=${encodeURIComponent(safeKeyword)}`);
   }
   const url = params.length > 0 ? `/inspections?${params.join('&')}` : '/inspections';
   const options = signal ? { signal } : {};
@@ -112,8 +121,9 @@ export function exportInspections(zone = null, status = null, sortBy = 'created_
   if (sortOrder) {
     params.push(`sortOrder=${encodeURIComponent(sortOrder)}`);
   }
-  if (remarksKeyword && remarksKeyword.trim()) {
-    params.push(`remarksKeyword=${encodeURIComponent(remarksKeyword.trim())}`);
+  const safeKeyword = safeTrim(remarksKeyword);
+  if (safeKeyword) {
+    params.push(`remarksKeyword=${encodeURIComponent(safeKeyword)}`);
   }
   let url = `${API_BASE}/inspections/export`;
   if (params.length > 0) {

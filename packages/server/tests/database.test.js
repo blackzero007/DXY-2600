@@ -179,6 +179,68 @@ async function runTests() {
     assert.ok(neverInspectedCount >= 2, '至少应有 2 个从未巡检的展品');
   });
 
+  await runTest('【BUG修复验证】getAllInspections 接收数组类型 remarksKeyword 不应崩溃（重复参数场景）', async () => {
+    const { initDatabase, getAllInspections, createInspection } = require('../src/database');
+    await initDatabase();
+
+    await createInspection(1, '测试员', 'abnormal', '发现轻微损伤，需要修复');
+    await createInspection(2, '测试员', 'normal', '展品状态良好');
+
+    const arrayKeyword = ['损伤', '修复'];
+    const result = await getAllInspections(null, null, 'created_at', 'desc', arrayKeyword);
+    assert.ok(Array.isArray(result), '应返回数组');
+    assert.ok(result.length > 0, '使用数组参数时也应能正常返回结果');
+    
+    result.forEach(record => {
+      assert.ok(
+        record.remarks && record.remarks.includes('损伤'),
+        '搜索结果的备注应包含关键字'
+      );
+    });
+  });
+
+  await runTest('【BUG修复验证】getAllInspections 接收数字类型 remarksKeyword 不应崩溃', async () => {
+    const { initDatabase, getAllInspections } = require('../src/database');
+    await initDatabase();
+
+    const result = await getAllInspections(null, null, 'created_at', 'desc', 12345);
+    assert.ok(Array.isArray(result), '应返回数组');
+  });
+
+  await runTest('【BUG修复验证】getAllInspections 接收对象类型 remarksKeyword 不应崩溃', async () => {
+    const { initDatabase, getAllInspections } = require('../src/database');
+    await initDatabase();
+
+    const result = await getAllInspections(null, null, 'created_at', 'desc', { foo: 'bar' });
+    assert.ok(Array.isArray(result), '应返回数组');
+  });
+
+  await runTest('【BUG修复验证】getAllInspections 空数组 remarksKeyword 返回全部数据', async () => {
+    const { initDatabase, getAllInspections } = require('../src/database');
+    await initDatabase();
+
+    const all = await getAllInspections();
+    const emptyArrayResult = await getAllInspections(null, null, 'created_at', 'desc', []);
+    assert.strictEqual(emptyArrayResult.length, all.length, '空数组参数应返回全部数据');
+  });
+
+  await runTest('【BUG修复验证】getAllInspections 所有参数为数组类型都不应崩溃', async () => {
+    const { initDatabase, getAllInspections, createInspection } = require('../src/database');
+    await initDatabase();
+    
+    await createInspection(1, '测试员', 'abnormal', '表面有损伤痕迹');
+    await createInspection(2, '测试员', 'normal', '状态良好');
+
+    const result = await getAllInspections(
+      ['古代文明区', '艺术画廊'],
+      ['normal', 'abnormal'],
+      ['exhibit_name', 'created_at'],
+      ['asc', 'desc'],
+      ['损伤', '修复']
+    );
+    assert.ok(Array.isArray(result), '所有参数为数组时也应正常返回');
+  });
+
   console.log(`\n📊 测试结果: ${passed}/${testCount} 通过`);
   
   if (failed > 0) {
