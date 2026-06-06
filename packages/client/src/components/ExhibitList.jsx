@@ -7,16 +7,21 @@ import ExhibitForm from './ExhibitForm.jsx';
 function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefreshZones }) {
   const [exhibits, setExhibits] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedExhibit, setSelectedExhibit] = useState(null);
   const [showModal, setShowModal] = useState(false);
+  const [submitError, setSubmitError] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
   const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [exhibitHistory, setExhibitHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailExhibit, setDetailExhibit] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [overdueExhibits, setOverdueExhibits] = useState([]);
+  const [overdueError, setOverdueError] = useState(null);
   const [overdueHours, setOverdueHours] = useState(24);
   const [showReminder, setShowReminder] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -37,21 +42,28 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
     activeExhibitsRequestIdRef.current = currentRequestId;
 
     setLoading(true);
+    setError(null);
     try {
       const data = await getExhibits(selectedZone, inspectionFilter || null);
       if (currentRequestId !== activeExhibitsRequestIdRef.current) {
         return;
       }
       setExhibits(data);
-    } catch (error) {
-      if (error.name === 'AbortError') {
+      setError(null);
+    } catch (err) {
+      if (err.name === 'AbortError') {
         return;
       }
       if (currentRequestId !== activeExhibitsRequestIdRef.current) {
         return;
       }
-      console.error('加载展品失败:', error);
-      onShowToast('加载展品失败', 'error');
+      console.error('加载展品失败:', err);
+      const errorInfo = {
+        message: err.message || '加载展品失败',
+        type: err.type || 'unknown',
+        status: err.status || 0
+      };
+      setError(errorInfo);
       setExhibits([]);
     } finally {
       if (currentRequestId === activeExhibitsRequestIdRef.current) {
@@ -70,14 +82,19 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
         return;
       }
       setOverdueExhibits(data);
-    } catch (error) {
-      if (error.name === 'AbortError') {
+      setOverdueError(null);
+    } catch (err) {
+      if (err.name === 'AbortError') {
         return;
       }
       if (currentRequestId !== activeOverdueRequestIdRef.current) {
         return;
       }
-      console.error('加载巡检提醒失败:', error);
+      console.error('加载巡检提醒失败:', err);
+      setOverdueError({
+        message: err.message || '加载巡检提醒失败',
+        type: err.type || 'unknown'
+      });
       setOverdueExhibits([]);
     }
   }
@@ -108,6 +125,8 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
   function handleInspect(exhibit) {
     handleCloseDetail();
     setSelectedExhibit(exhibit);
+    setSubmitError(null);
+    setSubmitting(false);
     setShowModal(true);
   }
 
@@ -119,19 +138,26 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
   async function handleViewHistory(exhibit) {
     setSelectedExhibit(exhibit);
     setHistoryLoading(true);
+    setHistoryError(null);
     setShowHistoryModal(true);
     try {
       const data = await getExhibitInspections(exhibit.id);
       setExhibitHistory(data);
-    } catch (error) {
-      console.error('加载历史记录失败:', error);
-      onShowToast('加载历史记录失败', 'error');
+      setHistoryError(null);
+    } catch (err) {
+      console.error('加载历史记录失败:', err);
+      setHistoryError({
+        message: err.message || '加载历史记录失败',
+        type: err.type || 'unknown'
+      });
     } finally {
       setHistoryLoading(false);
     }
   }
 
   async function handleSubmitInspection(data) {
+    setSubmitting(true);
+    setSubmitError(null);
     try {
       const result = await createInspection({
         exhibit_id: selectedExhibit.id,
@@ -141,6 +167,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
       });
       onShowToast('巡检记录提交成功');
       setShowModal(false);
+      setSubmitError(null);
       loadExhibits();
       loadOverdueExhibits();
       if (showHistoryModal && selectedExhibit) {
@@ -159,9 +186,17 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
           .then(latestData => setExhibitHistory(latestData))
           .catch(err => console.error('刷新历史记录失败:', err));
       }
-    } catch (error) {
-      console.error('提交巡检记录失败:', error);
-      onShowToast(error.message || '提交失败', 'error');
+    } catch (err) {
+      console.error('提交巡检记录失败:', err);
+      const errorInfo = {
+        message: err.message || '提交失败，请稍后重试',
+        type: err.type || 'unknown',
+        status: err.status || 0
+      };
+      setSubmitError(errorInfo);
+      onShowToast(`提交失败：${errorInfo.message}`, 'error');
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -346,7 +381,18 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
             </div>
           </div>
 
-          {overdueExhibits.length === 0 ? (
+          {overdueError ? (
+            <div className="reminder-error">
+              <span className="reminder-error-icon">⚠️</span>
+              <div className="reminder-error-content">
+                <p className="reminder-error-message">加载巡检提醒失败</p>
+                <p className="reminder-error-detail">{overdueError.message}</p>
+              </div>
+              <button className="btn btn-secondary btn-sm" onClick={loadOverdueExhibits}>
+                重试
+              </button>
+            </div>
+          ) : overdueExhibits.length === 0 ? (
             <div className="reminder-empty">
               <span className="reminder-empty-icon">✅</span>
               <p>所有展品均在 {overdueHours} 小时内完成了巡检</p>
@@ -404,6 +450,26 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
 
       {loading ? (
         <div className="loading">加载中...</div>
+      ) : error ? (
+        <div className="error-state">
+          <div className="icon">❌</div>
+          <h3>加载展品失败</h3>
+          <p className="error-detail">{error.message}</p>
+          {error.type && (
+            <p className="error-type">
+              错误类型：{
+                error.type === 'network' ? '网络连接错误' :
+                error.type === 'server' ? '服务器错误' :
+                error.type === 'validation' ? '请求参数错误' :
+                error.type === 'not_found' ? '资源不存在' :
+                '未知错误'
+              }
+            </p>
+          )}
+          <button className="btn-retry" onClick={loadExhibits}>
+            🔄 重新加载
+          </button>
+        </div>
       ) : filteredExhibits.length === 0 ? (
         <div className="empty-state">
           <div className="icon">📭</div>
@@ -466,6 +532,8 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
           exhibit={selectedExhibit}
           onClose={() => setShowModal(false)}
           onSubmit={handleSubmitInspection}
+          submitError={submitError}
+          submitting={submitting}
         />
       )}
 
@@ -475,6 +543,15 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
             <h2>📋 {selectedExhibit.name} - 巡检历史</h2>
             {historyLoading ? (
               <div className="loading">加载中...</div>
+            ) : historyError ? (
+              <div className="error-state">
+                <div className="icon">❌</div>
+                <h3>加载历史记录失败</h3>
+                <p className="error-detail">{historyError.message}</p>
+                <button className="btn-retry" onClick={() => handleViewHistory(selectedExhibit)}>
+                  🔄 重新加载
+                </button>
+              </div>
             ) : exhibitHistory.length === 0 ? (
               <div className="empty-state">
                 <div className="icon">📭</div>

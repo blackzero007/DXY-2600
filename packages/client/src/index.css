@@ -1256,6 +1256,119 @@ body {
   color: #ef4444;
 }
 
+.error-state .icon {
+  font-size: 4rem;
+  margin-bottom: 15px;
+}
+
+.error-state h3 {
+  color: #991b1b;
+  margin-bottom: 10px;
+}
+
+.error-detail {
+  color: #b91c1c;
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.error-type {
+  color: #ef4444;
+  font-size: 0.85rem;
+  margin-bottom: 20px;
+}
+
+.btn-retry {
+  padding: 10px 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-retry:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.reminder-error {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+}
+
+.reminder-error-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.reminder-error-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.reminder-error-message {
+  font-weight: 600;
+  color: #991b1b;
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.reminder-error-detail {
+  color: #b91c1c;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.submit-error {
+  display: flex;
+  gap: 12px;
+  padding: 16px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+.submit-error-icon {
+  font-size: 1.3rem;
+  flex-shrink: 0;
+}
+
+.submit-error-title {
+  font-weight: 600;
+  color: #991b1b;
+  font-size: 0.95rem;
+  margin-bottom: 4px;
+}
+
+.submit-error-message {
+  color: #b91c1c;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+}
+
+.submit-error-code {
+  color: #ef4444;
+  font-size: 0.8rem;
+  margin: 0;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
 .inspector-workload {
   display: flex;
   flex-direction: column;

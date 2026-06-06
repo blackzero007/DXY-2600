@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-function InspectionModal({ exhibit, onClose, onSubmit }) {
+function InspectionModal({ exhibit, onClose, onSubmit, submitError, submitting }) {
   const [inspector, setInspector] = useState('');
   const [status, setStatus] = useState('normal');
   const [remarks, setRemarks] = useState('');
@@ -22,6 +22,21 @@ function InspectionModal({ exhibit, onClose, onSubmit }) {
     e.preventDefault();
     if (validate()) {
       onSubmit({ inspector: inspector.trim(), status, remarks: remarks.trim() });
+    }
+  }
+
+  function getErrorTypeLabel(type) {
+    switch (type) {
+      case 'validation':
+        return '参数错误';
+      case 'not_found':
+        return '资源不存在';
+      case 'server':
+        return '服务器错误';
+      case 'network':
+        return '网络错误';
+      default:
+        return '提交失败';
     }
   }
 
@@ -89,12 +104,27 @@ function InspectionModal({ exhibit, onClose, onSubmit }) {
             )}
           </div>
 
+          {submitError && (
+            <div className="submit-error">
+              <div className="submit-error-icon">⚠️</div>
+              <div className="submit-error-content">
+                <p className="submit-error-title">
+                  {submitError.type ? getErrorTypeLabel(submitError.type) : '提交失败'}
+                </p>
+                <p className="submit-error-message">{submitError.message}</p>
+                {submitError.status && submitError.status > 0 && (
+                  <p className="submit-error-code">错误码：{submitError.status}</p>
+                )}
+              </div>
+            </div>
+          )}
+
           <div className="modal-actions">
-            <button type="button" className="btn btn-secondary" onClick={onClose}>
+            <button type="button" className="btn btn-secondary" onClick={onClose} disabled={submitting}>
               取消
             </button>
-            <button type="submit" className={`btn ${status === 'abnormal' ? 'btn-danger' : 'btn-primary'}`}>
-              提交巡检记录
+            <button type="submit" className={`btn ${status === 'abnormal' ? 'btn-danger' : 'btn-primary'}`} disabled={submitting}>
+              {submitting ? '提交中...' : '提交巡检记录'}
             </button>
           </div>
         </form>

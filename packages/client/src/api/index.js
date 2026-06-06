@@ -17,25 +17,101 @@ function safeTrim(value) {
   return String(value).trim();
 }
 
+function getErrorType(status) {
+  if (status >= 400 && status < 500) {
+    if (status === 404) return 'not_found';
+    if (status === 400 || status === 422) return 'validation';
+    if (status === 401 || status === 403) return 'auth';
+    return 'client';
+  }
+  if (status >= 500) return 'server';
+  return 'unknown';
+}
+
+function getUserFriendlyMessage(status, type, serverMessage) {
+  if (serverMessage) {
+    return serverMessage;
+  }
+  switch (type) {
+    case 'not_found':
+      return '请求的资源不存在';
+    case 'validation':
+      return '请求参数有误';
+    case 'auth':
+      return '请先登录后再操作';
+    case 'server':
+      return '服务器繁忙，请稍后重试';
+    case 'network':
+      return '网络连接失败，请检查网络';
+    default:
+      return '请求失败，请稍后重试';
+  }
+}
+
+class ApiError extends Error {
+  constructor({ message, status, type, details }) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.type = type;
+    this.details = details || null;
+  }
+}
+
 async function request(url, options = {}) {
-  const response = await fetch(`${API_BASE}${url}`, {
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers
-    },
-    ...options
-  });
+  try {
+    const response = await fetch(`${API_BASE}${url}`, {
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+      },
+      ...options
+    });
 
-  if (options.signal && options.signal.aborted) {
-    throw new DOMException('Aborted', 'AbortError');
+    if (options.signal && options.signal.aborted) {
+      throw new DOMException('Aborted', 'AbortError');
+    }
+
+    if (!response.ok) {
+      let errorData = { error: null };
+      try {
+        errorData = await response.json();
+      } catch (e) {
+        errorData = { error: `HTTP错误 (${response.status})` };
+      }
+      const type = getErrorType(response.status);
+      const message = getUserFriendlyMessage(response.status, type, errorData.error);
+      throw new ApiError({
+        message,
+        status: response.status,
+        type,
+        details: errorData.details || null
+      });
+    }
+
+    return response.json();
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw error;
+    }
+    if (error.name === 'ApiError') {
+      throw error;
+    }
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      throw new ApiError({
+        message: '网络连接失败，请检查网络设置',
+        status: 0,
+        type: 'network',
+        details: error.message
+      });
+    }
+    throw new ApiError({
+      message: error.message || '请求失败',
+      status: 0,
+      type: 'unknown',
+      details: error.message
+    });
   }
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: '请求失败' }));
-    throw new Error(error.error || `HTTP error! status: ${response.status}`);
-  }
-
-  return response.json();
 }
 
 export function getExhibits(zone = null, inspectionFilter = null) {

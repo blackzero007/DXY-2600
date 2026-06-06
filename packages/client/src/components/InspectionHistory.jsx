@@ -52,14 +52,18 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
       if (currentRequestId !== requestIdRef.current) return;
       setInspections(data);
       setError(null);
-    } catch (error) {
-      if (error.name === 'AbortError') {
+    } catch (err) {
+      if (err.name === 'AbortError') {
         return;
       }
       if (currentRequestId !== requestIdRef.current) return;
-      console.error('加载巡检历史失败:', error);
+      console.error('加载巡检历史失败:', err);
       setInspections([]);
-      setError(error.message || '加载失败');
+      setError({
+        message: err.message || '加载失败',
+        type: err.type || 'unknown',
+        status: err.status || 0
+      });
     } finally {
       if (!controller.signal.aborted && currentRequestId === requestIdRef.current) {
         setLoading(false);
@@ -209,10 +213,21 @@ function InspectionHistory({ zones, selectedZone, onZoneChange }) {
       ) : error ? (
         <div className="error-state">
           <div className="icon">❌</div>
-          <h3>加载失败</h3>
-          <p>{error}</p>
+          <h3>加载巡检历史失败</h3>
+          <p className="error-detail">{error.message}</p>
+          {error.type && (
+            <p className="error-type">
+              错误类型：{
+                error.type === 'network' ? '网络连接错误' :
+                error.type === 'server' ? '服务器错误' :
+                error.type === 'validation' ? '请求参数错误' :
+                error.type === 'not_found' ? '资源不存在' :
+                '未知错误'
+              }
+            </p>
+          )}
           <button className="btn-retry" onClick={loadInspections}>
-            🔄 重试
+            🔄 重新加载
           </button>
         </div>
       ) : inspections.length === 0 ? (
