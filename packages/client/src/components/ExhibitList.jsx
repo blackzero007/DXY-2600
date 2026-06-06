@@ -142,6 +142,10 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
       setShowModal(false);
       loadExhibits();
       loadOverdueExhibits();
+      if (showHistoryModal && selectedExhibit) {
+        const historyData = await getExhibitInspections(selectedExhibit.id);
+        setExhibitHistory(historyData);
+      }
     } catch (error) {
       console.error('提交巡检记录失败:', error);
       onShowToast(error.message || '提交失败', 'error');
