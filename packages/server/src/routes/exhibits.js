@@ -3,9 +3,9 @@ const router = express.Router();
 const { getAllExhibits, getExhibitById, getExhibitInspections, getZones, getAbnormalExhibits, getZoneOverviewStats, createExhibit, getOverdueExhibits } = require('../database');
 
 router.get('/', async (req, res) => {
-  const { zone } = req.query;
+  const { zone, inspectionFilter } = req.query;
   try {
-    const exhibits = await getAllExhibits(zone);
+    const exhibits = await getAllExhibits(zone || null, inspectionFilter || null);
     res.json(exhibits);
   } catch (error) {
     res.status(500).json({ error: error.message });

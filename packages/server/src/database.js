@@ -98,13 +98,16 @@ function initDatabase() {
   return Promise.resolve();
 }
 
-function getAllExhibits(zone = null) {
+function getAllExhibits(zone = null, inspectionFilter = null) {
+  const now = new Date();
+  const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+
   let filtered = exhibits;
   if (zone) {
-    filtered = exhibits.filter(e => e.zone === zone);
+    filtered = filtered.filter(e => e.zone === zone);
   }
-  
-  return Promise.resolve(filtered.map(exhibit => {
+
+  const result = filtered.map(exhibit => {
     const lastInspection = inspections
       .filter(i => i.exhibit_id === exhibit.id)
       .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
@@ -115,7 +118,22 @@ function getAllExhibits(zone = null) {
       last_inspected: lastInspection ? lastInspection.created_at : null,
       last_remarks: lastInspection ? lastInspection.remarks : null
     };
-  }));
+  });
+
+  if (inspectionFilter) {
+    switch (inspectionFilter) {
+      case 'never':
+        return Promise.resolve(result.filter(e => !e.last_inspected));
+      case 'within_24h':
+        return Promise.resolve(result.filter(e => e.last_inspected && new Date(e.last_inspected) >= twentyFourHoursAgo));
+      case 'overdue_24h':
+        return Promise.resolve(result.filter(e => !e.last_inspected || new Date(e.last_inspected) < twentyFourHoursAgo));
+      default:
+        break;
+    }
+  }
+
+  return Promise.resolve(result);
 }
 
 function getExhibitById(id) {

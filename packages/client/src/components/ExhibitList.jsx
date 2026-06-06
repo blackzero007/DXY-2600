@@ -20,6 +20,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
   const [overdueHours, setOverdueHours] = useState(24);
   const [showReminder, setShowReminder] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [inspectionFilter, setInspectionFilter] = useState('');
 
   const exhibitsRequestIdRef = useRef(0);
   const activeExhibitsRequestIdRef = useRef(null);
@@ -29,7 +30,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
   useEffect(() => {
     loadExhibits();
     loadOverdueExhibits();
-  }, [selectedZone, overdueHours]);
+  }, [selectedZone, overdueHours, inspectionFilter]);
 
   async function loadExhibits() {
     const currentRequestId = ++exhibitsRequestIdRef.current;
@@ -37,7 +38,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
 
     setLoading(true);
     try {
-      const data = await getExhibits(selectedZone);
+      const data = await getExhibits(selectedZone, inspectionFilter || null);
       if (currentRequestId !== activeExhibitsRequestIdRef.current) {
         return;
       }
@@ -240,6 +241,17 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
           {zones.map(zone => (
             <option key={zone} value={zone}>{zone}</option>
           ))}
+        </select>
+        <label htmlFor="inspection-filter">按巡检状态：</label>
+        <select
+          id="inspection-filter"
+          value={inspectionFilter}
+          onChange={(e) => setInspectionFilter(e.target.value)}
+        >
+          <option value="">全部</option>
+          <option value="never">未巡检</option>
+          <option value="within_24h">24小时内巡检</option>
+          <option value="overdue_24h">超过24小时未巡检</option>
         </select>
         {zoneQuickStats && (
           <div className="zone-quick-stats">

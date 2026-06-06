@@ -38,8 +38,15 @@ async function request(url, options = {}) {
   return response.json();
 }
 
-export function getExhibits(zone = null) {
-  const url = zone ? `/exhibits?zone=${encodeURIComponent(zone)}` : '/exhibits';
+export function getExhibits(zone = null, inspectionFilter = null) {
+  const params = [];
+  if (zone) {
+    params.push(`zone=${encodeURIComponent(zone)}`);
+  }
+  if (inspectionFilter) {
+    params.push(`inspectionFilter=${encodeURIComponent(inspectionFilter)}`);
+  }
+  const url = params.length > 0 ? `/exhibits?${params.join('&')}` : '/exhibits';
   return request(url);
 }
 
