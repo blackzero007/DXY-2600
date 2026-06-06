@@ -132,7 +132,7 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
 
   async function handleSubmitInspection(data) {
     try {
-      await createInspection({
+      const result = await createInspection({
         exhibit_id: selectedExhibit.id,
         inspector: data.inspector,
         status: data.status,
@@ -143,12 +143,20 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
       loadExhibits();
       loadOverdueExhibits();
       if (showHistoryModal && selectedExhibit) {
-        try {
-          const historyData = await getExhibitInspections(selectedExhibit.id);
-          setExhibitHistory(historyData);
-        } catch (historyError) {
-          console.error('刷新历史记录失败:', historyError);
-        }
+        const newRecord = {
+          id: result.id ?? Date.now(),
+          inspector: data.inspector,
+          status: data.status,
+          remarks: data.remarks,
+          created_at: new Date().toISOString(),
+          exhibit_id: selectedExhibit.id,
+          exhibit_name: selectedExhibit.name,
+          exhibit_zone: selectedExhibit.zone
+        };
+        setExhibitHistory(prev => [newRecord, ...prev]);
+        getExhibitInspections(selectedExhibit.id)
+          .then(latestData => setExhibitHistory(latestData))
+          .catch(err => console.error('刷新历史记录失败:', err));
       }
     } catch (error) {
       console.error('提交巡检记录失败:', error);
