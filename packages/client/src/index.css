@@ -147,6 +147,64 @@ body {
   color: #9ca3af;
 }
 
+.zone-quick-stats {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8ecff 100%);
+  border: 1px solid #c7d2fe;
+  border-radius: 10px;
+  padding: 8px 16px;
+}
+
+.zone-quick-stats-label {
+  font-weight: 600;
+  color: #4338ca;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.zone-quick-stats-items {
+  display: flex;
+  gap: 16px;
+}
+
+.zone-quick-stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 40px;
+}
+
+.zone-quick-stat-value {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #4338ca;
+  line-height: 1.2;
+}
+
+.zone-quick-stat-label {
+  font-size: 0.75rem;
+  color: #6366f1;
+  margin-top: 2px;
+}
+
+.zone-quick-stat-item.abnormal .zone-quick-stat-value {
+  color: #dc2626;
+}
+
+.zone-quick-stat-item.abnormal .zone-quick-stat-label {
+  color: #f87171;
+}
+
+.zone-quick-stat-item.pending .zone-quick-stat-value {
+  color: #d97706;
+}
+
+.zone-quick-stat-item.pending .zone-quick-stat-label {
+  color: #fbbf24;
+}
+
 .search-clear {
   position: absolute;
   right: 8px;

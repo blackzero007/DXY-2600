@@ -172,6 +172,12 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
     neverInspected: filteredExhibits.filter(e => !e.last_status).length
   };
 
+  const zoneQuickStats = selectedZone ? {
+    total: validExhibits.length,
+    abnormal: validExhibits.filter(e => e.last_status === 'abnormal').length,
+    pending: validExhibits.filter(e => !e.last_status).length
+  } : null;
+
   return (
     <div>
       <div className="filter-bar">
@@ -186,6 +192,25 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
             <option key={zone} value={zone}>{zone}</option>
           ))}
         </select>
+        {zoneQuickStats && (
+          <div className="zone-quick-stats">
+            <span className="zone-quick-stats-label">{selectedZone}</span>
+            <div className="zone-quick-stats-items">
+              <div className="zone-quick-stat-item">
+                <span className="zone-quick-stat-value">{zoneQuickStats.total}</span>
+                <span className="zone-quick-stat-label">总数</span>
+              </div>
+              <div className="zone-quick-stat-item abnormal">
+                <span className="zone-quick-stat-value">{zoneQuickStats.abnormal}</span>
+                <span className="zone-quick-stat-label">异常</span>
+              </div>
+              <div className="zone-quick-stat-item pending">
+                <span className="zone-quick-stat-value">{zoneQuickStats.pending}</span>
+                <span className="zone-quick-stat-label">待巡检</span>
+              </div>
+            </div>
+          </div>
+        )}
         <div className="search-container">
           <span className="search-icon">🔍</span>
           <input
