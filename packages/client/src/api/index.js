@@ -3,7 +3,16 @@ const API_BASE = '/api';
 function safeTrim(value) {
   if (value === null || value === undefined) return null;
   if (Array.isArray(value)) {
-    return value.length > 0 ? String(value[0]).trim() : null;
+    for (let i = 0; i < value.length; i++) {
+      const item = value[i];
+      if (item !== null && item !== undefined) {
+        const str = String(item).trim();
+        if (str.length > 0) {
+          return str;
+        }
+      }
+    }
+    return null;
   }
   return String(value).trim();
 }

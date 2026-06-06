@@ -20,7 +20,16 @@ function test(name, fn) {
 function safeTrim(value) {
   if (value === null || value === undefined) return null;
   if (Array.isArray(value)) {
-    return value.length > 0 ? String(value[0]).trim() : null;
+    for (let i = 0; i < value.length; i++) {
+      const item = value[i];
+      if (item !== null && item !== undefined) {
+        const str = String(item).trim();
+        if (str.length > 0) {
+          return str;
+        }
+      }
+    }
+    return null;
   }
   return String(value).trim();
 }
@@ -64,9 +73,16 @@ test('safeTrim: 空字符串返回空字符串', () => {
   assert.strictEqual(safeTrim('   '), '');
 });
 
-test('【BUG修复验证】safeTrim: 数组类型取第一个元素（重复参数场景）', () => {
-  assert.strictEqual(safeTrim(['损伤', '修复']), '损伤');
-  assert.strictEqual(safeTrim(['  良好  ', '一般']), '良好');
+test('【BUG修复验证】safeTrim: 数组类型取第一个非空元素（首空后续有效场景）', () => {
+  assert.strictEqual(safeTrim(['', '损伤']), '损伤');
+  assert.strictEqual(safeTrim(['', '', '修复']), '修复');
+  assert.strictEqual(safeTrim(['  ', '  良好  ']), '良好');
+  assert.strictEqual(safeTrim(['', '  一般  ', '优秀']), '一般');
+});
+
+test('【BUG修复验证】safeTrim: 数组全为空字符串时返回 null', () => {
+  assert.strictEqual(safeTrim(['', '']), null);
+  assert.strictEqual(safeTrim(['  ', '', '   ']), null);
 });
 
 test('【BUG修复验证】safeTrim: 空数组返回 null', () => {
@@ -96,10 +112,21 @@ test('buildInspectionsUrl: 正常字符串 remarksKeyword 正确拼接', () => {
   assert.ok(url.includes('remarksKeyword=%E6%8D%9F%E4%BC%A4'), 'URL 应包含编码后的 remarksKeyword 参数');
 });
 
-test('【BUG修复验证】buildInspectionsUrl: 数组 remarksKeyword 不崩溃且取第一个值', () => {
-  const url = buildInspectionsUrl(null, null, 'created_at', 'desc', ['损伤', '修复']);
-  assert.ok(url.includes('remarksKeyword=%E6%8D%9F%E4%BC%A4'), '数组参数时应取第一个值并正确编码');
-  assert.ok(!url.includes('%E4%BF%AE%E5%A4%8D'), '不应包含第二个数组元素');
+test('【BUG修复验证】buildInspectionsUrl: 数组 remarksKeyword 首元素为空时取后续有效值', () => {
+  const url = buildInspectionsUrl(null, null, 'created_at', 'desc', ['', '损伤']);
+  assert.ok(url.includes('remarksKeyword=%E6%8D%9F%E4%BC%A4'), '数组首元素为空时应取后续第一个有效值');
+});
+
+test('【BUG修复验证】buildInspectionsUrl: 数组 remarksKeyword 多个空元素后取有效值', () => {
+  const url = buildInspectionsUrl(null, null, 'created_at', 'desc', ['', '  ', '良好']);
+  assert.ok(url.includes('remarksKeyword=%E8%89%AF%E5%A5%BD'), '多个空元素后应取第一个有效值');
+  assert.ok(url.includes('%E8%89%AF%E5%A5%BD'), '值应自动 trim 后编码');
+});
+
+test('【BUG修复验证】buildInspectionsUrl: 数组 remarksKeyword 全为空时不添加参数', () => {
+  const url = buildInspectionsUrl(null, null, 'created_at', 'desc', ['', '', '  ']);
+  assert.strictEqual(url, '/inspections?sortBy=created_at&sortOrder=desc');
+  assert.ok(!url.includes('remarksKeyword'), '数组全为空时不应添加 remarksKeyword 参数');
 });
 
 test('【BUG修复验证】buildInspectionsUrl: 空数组 remarksKeyword 不添加参数', () => {

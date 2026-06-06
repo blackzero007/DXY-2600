@@ -241,6 +241,67 @@ async function runTests() {
     assert.ok(Array.isArray(result), '所有参数为数组时也应正常返回');
   });
 
+  await runTest('【BUG修复验证】数组参数首元素为空时，取后续第一个有效值', async () => {
+    const { initDatabase, getAllInspections, createInspection } = require('../src/database');
+    await initDatabase();
+
+    await createInspection(1, '测试员A', 'abnormal', '发现轻微损伤，需要修复');
+    await createInspection(2, '测试员B', 'normal', '展品状态良好');
+
+    const all = await getAllInspections();
+    const strResult = await getAllInspections(null, null, 'created_at', 'desc', '损伤');
+    const arrEmptyFirst = await getAllInspections(null, null, 'created_at', 'desc', ['', '损伤']);
+
+    assert.strictEqual(
+      arrEmptyFirst.length,
+      strResult.length,
+      '数组首元素为空时，应取后续第一个有效值，结果与直接传字符串相同'
+    );
+    assert.ok(arrEmptyFirst.length < all.length, '过滤后记录数应少于全部记录数');
+  });
+
+  await runTest('【BUG修复验证】数组参数前几个元素全为空时，跳过空值取有效', async () => {
+    const { initDatabase, getAllInspections, createInspection } = require('../src/database');
+    await initDatabase();
+
+    await createInspection(1, '测试员', 'normal', '状态良好，无异常');
+
+    const strResult = await getAllInspections(null, null, 'created_at', 'desc', '良好');
+    const arrMultiEmpty = await getAllInspections(null, null, 'created_at', 'desc', ['', '', '  ', '良好']);
+
+    assert.strictEqual(
+      arrMultiEmpty.length,
+      strResult.length,
+      '数组前几个元素全为空时，应跳过空值取第一个有效值'
+    );
+  });
+
+  await runTest('【BUG修复验证】数组参数全为空时返回全部数据（不崩溃）', async () => {
+    const { initDatabase, getAllInspections } = require('../src/database');
+    await initDatabase();
+
+    const all = await getAllInspections();
+    const allEmptyArr = await getAllInspections(null, null, 'created_at', 'desc', ['', '', '']);
+
+    assert.strictEqual(allEmptyArr.length, all.length, '数组全为空时应返回全部数据');
+  });
+
+  await runTest('【BUG修复验证】remarksKeyword 数组元素自动 trim 后再判断有效性', async () => {
+    const { initDatabase, getAllInspections, createInspection } = require('../src/database');
+    await initDatabase();
+
+    await createInspection(1, '测试员', 'abnormal', '有损伤痕迹需处理');
+
+    const strResult = await getAllInspections(null, null, 'created_at', 'desc', '损伤');
+    const arrSpaced = await getAllInspections(null, null, 'created_at', 'desc', ['  ', '  损伤  ']);
+
+    assert.strictEqual(
+      arrSpaced.length,
+      strResult.length,
+      '数组元素带前后空格时，应自动 trim 后再判断有效性'
+    );
+  });
+
   console.log(`\n📊 测试结果: ${passed}/${testCount} 通过`);
   
   if (failed > 0) {
