@@ -93,8 +93,10 @@ router.post('/', async (req, res) => {
     return res.status(400).json({ error: '状态值无效' });
   }
 
-  if (status === 'abnormal' && (!remarks || !remarks.trim())) {
-    return res.status(400).json({ error: '异常状态下备注为必填项' });
+  if (status === 'abnormal') {
+    if (typeof remarks !== 'string' || !remarks.trim()) {
+      return res.status(400).json({ error: '异常状态下备注为必填项' });
+    }
   }
 
   try {
@@ -103,7 +105,8 @@ router.post('/', async (req, res) => {
       return res.status(404).json({ error: '展品不存在' });
     }
 
-    const id = await createInspection(exhibit_id, inspector, status, remarks || '');
+    const safeRemarks = typeof remarks === 'string' ? remarks : '';
+    const id = await createInspection(exhibit_id, inspector, status, safeRemarks);
     res.status(201).json({ id, message: '巡检记录创建成功' });
   } catch (error) {
     res.status(500).json({ error: error.message });
