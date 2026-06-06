@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { getExhibits, createInspection, getExhibitInspections, getExhibitById, createExhibit, getZones, getOverdueExhibits } from '../api/index.js';
 import InspectionModal from './InspectionModal.jsx';
 import ExhibitDetail from './ExhibitDetail.jsx';
@@ -21,30 +21,63 @@ function ExhibitList({ zones, selectedZone, onZoneChange, onShowToast, onRefresh
   const [showReminder, setShowReminder] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
 
+  const exhibitsRequestIdRef = useRef(0);
+  const activeExhibitsRequestIdRef = useRef(null);
+  const overdueRequestIdRef = useRef(0);
+  const activeOverdueRequestIdRef = useRef(null);
+
   useEffect(() => {
     loadExhibits();
     loadOverdueExhibits();
   }, [selectedZone, overdueHours]);
 
   async function loadExhibits() {
+    const currentRequestId = ++exhibitsRequestIdRef.current;
+    activeExhibitsRequestIdRef.current = currentRequestId;
+
     setLoading(true);
     try {
       const data = await getExhibits(selectedZone);
+      if (currentRequestId !== activeExhibitsRequestIdRef.current) {
+        return;
+      }
       setExhibits(data);
     } catch (error) {
+      if (error.name === 'AbortError') {
+        return;
+      }
+      if (currentRequestId !== activeExhibitsRequestIdRef.current) {
+        return;
+      }
       console.error('加载展品失败:', error);
       onShowToast('加载展品失败', 'error');
+      setExhibits([]);
     } finally {
-      setLoading(false);
+      if (currentRequestId === activeExhibitsRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   }
 
   async function loadOverdueExhibits() {
+    const currentRequestId = ++overdueRequestIdRef.current;
+    activeOverdueRequestIdRef.current = currentRequestId;
+
     try {
       const data = await getOverdueExhibits(overdueHours, selectedZone);
+      if (currentRequestId !== activeOverdueRequestIdRef.current) {
+        return;
+      }
       setOverdueExhibits(data);
     } catch (error) {
+      if (error.name === 'AbortError') {
+        return;
+      }
+      if (currentRequestId !== activeOverdueRequestIdRef.current) {
+        return;
+      }
       console.error('加载巡检提醒失败:', error);
+      setOverdueExhibits([]);
     }
   }
 
